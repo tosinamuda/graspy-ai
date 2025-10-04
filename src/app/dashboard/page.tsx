@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getUserProfile } from '@/lib/user-storage';
 import { getCountryName, getLanguageInfo } from '@/lib/constants';
+import { useI18n } from '@/lib/i18n-context';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 interface Subject {
   id: string;
@@ -16,6 +18,7 @@ interface Subject {
 
 export default function DashboardPage() {
   const router = useRouter();
+  const { t } = useI18n();
   const [isLoading, setIsLoading] = useState(true);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [userProfile, setUserProfile] = useState<any>(null);
@@ -32,12 +35,12 @@ export default function DashboardPage() {
 
     // Simulate loading curriculum (we'll implement AI generation later)
     setTimeout(() => {
-      // Mock subjects for now
+      // Mock subjects - names will be translated by t()
       setSubjects([
-        { id: '1', name: 'Mathematics', icon: '🔢', topicCount: 12, completedTopics: 0, color: 'bg-blue-500' },
-        { id: '2', name: 'Science', icon: '🔬', topicCount: 10, completedTopics: 0, color: 'bg-green-500' },
-        { id: '3', name: 'Language Arts', icon: '📚', topicCount: 8, completedTopics: 0, color: 'bg-purple-500' },
-        { id: '4', name: 'Social Studies', icon: '🌍', topicCount: 9, completedTopics: 0, color: 'bg-orange-500' },
+        { id: '1', name: 'mathematics', icon: '🔢', topicCount: 12, completedTopics: 0, color: 'bg-blue-500' },
+        { id: '2', name: 'science', icon: '🔬', topicCount: 10, completedTopics: 0, color: 'bg-green-500' },
+        { id: '3', name: 'languageArts', icon: '📚', topicCount: 8, completedTopics: 0, color: 'bg-purple-500' },
+        { id: '4', name: 'socialStudies', icon: '🌍', topicCount: 9, completedTopics: 0, color: 'bg-orange-500' },
       ]);
       setIsLoading(false);
     }, 3000);
@@ -52,18 +55,24 @@ export default function DashboardPage() {
       {/* Left Panel - Learning Plan (80%) */}
       <div className="w-4/5 p-6 overflow-y-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome back! 👋
-          </h1>
-          <p className="text-gray-600">
-            Learning in {getLanguageInfo(userProfile.language).nativeName} • {getCountryName(userProfile.country)}
-          </p>
+        <div className="mb-8 flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+              {t('dashboard.welcome')}
+            </h1>
+            <p className="text-gray-600">
+              {t('dashboard.learningIn', {
+                language: getLanguageInfo(userProfile.language).nativeName,
+                country: getCountryName(userProfile.country),
+              })}
+            </p>
+          </div>
+          <LanguageSwitcher />
         </div>
 
         {/* Learning Plan Grid */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Your Learning Plan</h2>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">{t('dashboard.yourLearningPlan')}</h2>
 
           {isLoading ? (
             // Skeleton Loading State
@@ -100,8 +109,8 @@ export default function DashboardPage() {
                         {subject.icon}
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 text-lg">{subject.name}</h3>
-                        <p className="text-sm text-gray-500">{subject.topicCount} topics</p>
+                        <h3 className="font-semibold text-gray-900 text-lg">{t(`subjects.${subject.name}`)}</h3>
+                        <p className="text-sm text-gray-500">{subject.topicCount} {t('dashboard.topics')}</p>
                       </div>
                     </div>
                   </div>
@@ -109,7 +118,7 @@ export default function DashboardPage() {
                   {/* Progress Bar */}
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Progress</span>
+                      <span className="text-gray-600">{t('dashboard.progress')}</span>
                       <span className="text-gray-900 font-medium">
                         {subject.completedTopics}/{subject.topicCount}
                       </span>
@@ -131,7 +140,7 @@ export default function DashboardPage() {
           {/* Study Plan Timeline (Placeholder) */}
           {!isLoading && (
             <div className="mt-8 bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-              <h3 className="font-semibold text-gray-900 mb-4">This Week's Plan</h3>
+              <h3 className="font-semibold text-gray-900 mb-4">{t('dashboard.thisWeeksPlan')}</h3>
               <div className="space-y-3">
                 {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'].map((day, idx) => (
                   <div key={day} className="flex items-center gap-4 text-sm">
@@ -161,8 +170,8 @@ export default function DashboardPage() {
               G
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900">graspy</h3>
-              <p className="text-xs text-gray-500">Your AI tutor</p>
+              <h3 className="font-semibold text-gray-900">{t('chat.graspyTitle')}</h3>
+              <p className="text-xs text-gray-500">{t('chat.graspySubtitle')}</p>
             </div>
           </div>
         </div>
@@ -174,7 +183,7 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <div className="bg-indigo-50 rounded-lg p-3 text-sm">
                 <p className="text-gray-700 mb-3">
-                  Creating your personalized learning plan...
+                  {t('chat.creatingPlan')}
                 </p>
 
                 {/* Checklist */}
@@ -185,7 +194,7 @@ export default function DashboardPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span className="text-gray-700">Analyzing your profile</span>
+                    <span className="text-gray-700">{t('chat.analyzingProfile')}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
@@ -194,26 +203,26 @@ export default function DashboardPage() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                     </div>
-                    <span className="text-gray-700">Creating subjects</span>
+                    <span className="text-gray-700">{t('chat.creatingSubjects')}</span>
                   </div>
 
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded-full border-2 border-indigo-500 animate-spin">
                       <div className="w-1 h-1 bg-indigo-500 rounded-full"></div>
                     </div>
-                    <span className="text-gray-700">Generating topics...</span>
+                    <span className="text-gray-700">{t('chat.generatingTopics')}</span>
                   </div>
 
                   <div className="flex items-center gap-2 opacity-50">
                     <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
-                    <span className="text-gray-500">Creating daily plan</span>
+                    <span className="text-gray-500">{t('chat.creatingDailyPlan')}</span>
                   </div>
                 </div>
 
                 {/* Progress */}
                 <div className="mt-3">
                   <div className="flex justify-between text-xs text-gray-600 mb-1">
-                    <span>Progress</span>
+                    <span>{t('dashboard.progress')}</span>
                     <span>65%</span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-1.5">
@@ -227,13 +236,16 @@ export default function DashboardPage() {
             <div className="space-y-4">
               <div className="bg-indigo-50 rounded-lg p-3 text-sm">
                 <p className="text-gray-700">
-                  ✅ Your learning plan is ready! I've created 4 subjects with {subjects.reduce((acc, s) => acc + s.topicCount, 0)} topics tailored for you.
+                  {t('chat.planReady', {
+                    subjectCount: subjects.length,
+                    topicCount: subjects.reduce((acc, s) => acc + s.topicCount, 0),
+                  })}
                 </p>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-3 text-sm">
                 <p className="text-gray-700">
-                  Click on any subject to start learning! 📚
+                  {t('dashboard.clickToStart')}
                 </p>
               </div>
             </div>
@@ -245,7 +257,7 @@ export default function DashboardPage() {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Ask graspy anything..."
+              placeholder={t('chat.askPlaceholder')}
               disabled={isLoading}
               className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
             />
@@ -253,7 +265,7 @@ export default function DashboardPage() {
               disabled={isLoading}
               className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Send
+              {t('chat.send')}
             </button>
           </div>
         </div>
