@@ -12,6 +12,7 @@ import ENV from '@src/common/constants/ENV';
 import HttpStatusCodes from '@src/common/constants/HttpStatusCodes';
 import { RouteError } from '@src/common/util/route-errors';
 import { NodeEnvs } from '@src/common/constants';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 
 
 /******************************************************************************
@@ -33,7 +34,7 @@ app.use(cors({
 
 // Basic middleware
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 
 // Show routes called in console during development
 if (ENV.NodeEnv === NodeEnvs.Dev) {
@@ -67,6 +68,17 @@ app.use((err: Error, _: Request, res: Response, next: NextFunction) => {
 
 // **** FrontEnd Content **** //
 
+// Proxy EVERYTHING else to Next
+app.use(
+  '/',
+  createProxyMiddleware({
+    target: 'http://localhost:3000', // Next dev/prod port
+    changeOrigin: true,
+    ws: true,            // HMR websockets in dev
+    xfwd: true,          // preserve X-Forwarded-* headers
+  }),
+);
+
 // Set views directory (html)
 const viewsDir = path.join(__dirname, 'views');
 app.set('views', viewsDir);
@@ -74,16 +86,6 @@ app.set('views', viewsDir);
 // Set static directory (js and css).
 const staticDir = path.join(__dirname, 'public');
 app.use(express.static(staticDir));
-
-// Nav to users pg by default
-app.get('/', (_: Request, res: Response) => {
-  return res.redirect('/users');
-});
-
-// Redirect to login if not logged in.
-app.get('/users', (_: Request, res: Response) => {
-  return res.sendFile('users.html', { root: viewsDir });
-});
 
 
 /******************************************************************************

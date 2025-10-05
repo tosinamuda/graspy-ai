@@ -10,12 +10,18 @@ interface TopicCardProps {
 }
 
 const STATUS_STYLES: Record<TopicStatus, string> = {
+  'not-generated': 'border-gray-200 bg-gray-50 text-gray-400',
+  'generating': 'border-yellow-300 bg-yellow-50 text-yellow-700',
+  'generated': 'border-teal-500 bg-white hover:shadow-md',
   unlocked: 'border-teal-500 bg-white hover:shadow-md',
   locked: 'border-gray-200 bg-gray-50 text-gray-400',
   completed: 'border-teal-200 bg-teal-50 text-teal-800 hover:shadow-sm',
 };
 
 const STATUS_ICON: Record<TopicStatus, string> = {
+  'not-generated': '⏳',
+  'generating': '⚙️',
+  'generated': '✅',
   unlocked: '✅',
   locked: '🔒',
   completed: '✓',

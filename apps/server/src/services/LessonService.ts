@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable max-len */
 import { ChatOpenAI } from '@langchain/openai';
 import { Annotation, StateGraph } from '@langchain/langgraph';
 
@@ -41,7 +43,21 @@ function createModel() {
 async function generateExplanation(state: LessonStateType): Promise<Partial<LessonStateType>> {
   const model = createModel();
 
-  const prompt = `You are an experienced instructional designer creating a lesson overview for a student in ${state.country}.\nThe student speaks ${state.language} and is currently studying ${state.subject}.\nThe current topic is \"${state.topic}\" and the expected grade level is ${state.gradeLevel || 'middle school'}.\n\nRespond ONLY with a JSON object that satisfies this TypeScript type:\n{\n  "explanation": string;\n  "learning_objectives": string[];\n}\n\nGuidelines:\n- Write the explanation in ${state.language}.\n- Provide 3 concise learning objectives focused on ${state.topic}.\n- Keep the explanation to 3-4 sentences, clear and encouraging, grounded in the context of ${state.country}.`;
+  const prompt = 
+`You are an experienced instructional designer creating a lesson overview for a student in ${state.country}.
+The student speaks ${state.language} and is currently studying ${state.subject}.
+The current topic is ${state.topic} and the expected grade level is ${state.gradeLevel || 'middle school'}.
+
+Respond ONLY with a JSON object that satisfies this TypeScript type:
+{
+  "explanation": string;
+  "learning_objectives": string[];
+}
+  
+Guidelines:
+- Write the explanation in ${state.language}.
+- Provide 3 concise learning objectives focused on ${state.topic}.
+- Keep the explanation to 3-4 sentences, clear and encouraging, grounded in the context of ${state.country}.`;
 
   try {
     const response = await model.invoke(prompt);
@@ -51,8 +67,8 @@ async function generateExplanation(state: LessonStateType): Promise<Partial<Less
         : JSON.stringify(response.content);
 
     const parsed = JSON.parse(content) as {
-      explanation: string;
-      learning_objectives: string[];
+      explanation: string,
+      learning_objectives: string[],
     };
 
     if (!parsed.explanation || !Array.isArray(parsed.learning_objectives)) {
@@ -78,7 +94,28 @@ async function generateExplanation(state: LessonStateType): Promise<Partial<Less
 async function generatePractice(state: LessonStateType): Promise<Partial<LessonStateType>> {
   const model = createModel();
 
-  const prompt = `You are generating a quick formative assessment question for ${state.subject} on the topic \"${state.topic}\".\nThe learner is in ${state.country}, speaks ${state.language}, and is around ${state.gradeLevel || 'middle school'} level.\nHere is the lesson explanation to reference:\n"""\n${state.explanation}\n"""\nLearning objectives:\n${state.learningObjectives.join('\n')}\n\nReturn ONLY a JSON object matching this TypeScript type:\n{\n  "question": string;\n  "options": string[]; // exactly 3 or 4 options in ${state.language}\n  "correct_option_index": number; // zero-based index\n  "correct_feedback": string; // positive, specific to ${state.topic}\n  "incorrect_feedback": string; // constructive guidance in ${state.language}\n}\n\nEnsure:\n- The question is answerable from the explanation above.\n- Options are short, distinct, and culturally relevant to ${state.country}.\n- Feedback references the correct reasoning.`;
+  const prompt = 
+`You are generating a quick formative assessment question for ${state.subject} on the topic \\"${state.topic}\\".
+The learner is in ${state.country}, speaks ${state.language}, and is around ${state.gradeLevel || 'middle school'} level.
+Here is the lesson explanation to reference:
+"""
+${state.explanation}
+"""
+Learning objectives:
+${state.learningObjectives.join('\n')}
+
+Return ONLY a JSON object matching this TypeScript type:
+{
+  "question": string;
+  "options": string[]; // exactly 3 or 4 options in ${state.language}
+  "correct_option_index": number; // zero-based index
+  "correct_feedback": string; // positive, specific to ${state.topic}
+  "incorrect_feedback": string; // constructive guidance in ${state.language}
+  }
+Ensure:
+- The question is answerable from the explanation above.
+- Options are short, distinct, and culturally relevant to ${state.country}.
+- Feedback references the correct reasoning.`;
 
   try {
     const response = await model.invoke(prompt);
@@ -88,11 +125,11 @@ async function generatePractice(state: LessonStateType): Promise<Partial<LessonS
         : JSON.stringify(response.content);
 
     const parsed = JSON.parse(content) as {
-      question: string;
-      options: string[];
-      correct_option_index: number;
-      correct_feedback: string;
-      incorrect_feedback: string;
+      question: string,
+      options: string[],
+      correct_option_index: number,
+      correct_feedback: string,
+      incorrect_feedback: string,
     };
 
     if (!parsed.question || !Array.isArray(parsed.options) || parsed.options.length < 3) {
@@ -156,19 +193,19 @@ export interface LearningSessionPayload {
   totalTopics: number;
   explanation: string;
   practice: {
-    question: string;
-    options: string[];
-    answerIndex: number;
-    correctFeedback: string;
-    incorrectFeedback: string;
+    question: string,
+    options: string[],
+    answerIndex: number,
+    correctFeedback: string,
+    incorrectFeedback: string,
   };
   phase: 'explanation';
   metadata: {
-    country: string;
-    language: string;
-    gradeLevel?: string;
-    generator: string;
-    learningObjectives: string[];
+    country: string,
+    language: string,
+    gradeLevel?: string,
+    generator: string,
+    learningObjectives: string[],
   };
 }
 
@@ -223,7 +260,7 @@ export async function generateLesson(request: LessonRequest): Promise<LessonResp
       language: request.language,
       gradeLevel: request.gradeLevel,
       generator: 'langgraph_lesson_v1',
-    learningObjectives: result.learningObjectives ?? [],
+      learningObjectives: result.learningObjectives ?? [],
     },
   };
 

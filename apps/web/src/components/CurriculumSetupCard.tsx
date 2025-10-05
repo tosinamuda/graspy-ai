@@ -58,15 +58,14 @@ export default function CurriculumSetupCard({
 
   const steps = useMemo<SetupStep[]>(() => {
     const hasSubjects = subjectEntries.length > 0;
-    const lessonSubject = curriculum?.activeSession?.subject ?? null;
     const lessonPhase = curriculum?.activeSession?.phase;
     const hasLesson = Boolean(curriculum?.activeSession);
 
     const generateState: SetupState = isGenerating
       ? 'active'
       : hasSubjects
-      ? 'complete'
-      : 'pending';
+        ? 'complete'
+        : 'pending';
 
     const pathState: SetupState = hasSubjects
       ? hasLesson
@@ -74,8 +73,8 @@ export default function CurriculumSetupCard({
           ? 'complete'
           : 'active'
         : nextSubject
-        ? 'active'
-        : 'complete'
+          ? 'active'
+          : 'complete'
       : 'pending';
 
     const sessionState: SetupState = hasLesson
@@ -101,8 +100,8 @@ export default function CurriculumSetupCard({
           hasLesson && lessonPhase === 'explanation'
             ? t('dashboard.setup.lessonReady')
             : nextSubject
-            ? t('dashboard.startLesson')
-            : undefined,
+              ? t('dashboard.startLesson')
+              : undefined,
       },
       {
         key: 'session',

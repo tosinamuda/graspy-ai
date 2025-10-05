@@ -93,3 +93,5 @@ data/
 .db/
 sqlite.db
 *.sqlite
+
+.claude

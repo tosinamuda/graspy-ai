@@ -1,14 +1,12 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState, useCallback, useEffect, useRef } from 'react';
 import {
-  fetchLesson,
   generateLessonSession,
   streamCurriculum,
   type CurriculumRequest,
   type LessonRequest,
-  type LessonResponse,
-  type LessonContentPayload,
 } from '@/lib/curriculum-api';
 import {
   saveCurriculum,
@@ -22,36 +20,9 @@ import {
   type CurriculumData,
   type LearningSession,
 } from '@/lib/curriculum-db';
-import {
-  loadSubjectStatuses,
-  setTopicStatus,
-  getTopicStatus,
-  clearSubjectStatuses,
-  resetAllTopicStatuses,
-  type TopicStatusRecord,
-  type TopicStatusValue,
-} from '@/lib/topic-progress';
-import {
-  getCachedLesson,
-  setCachedLesson,
-  clearLessonCacheForSubject,
-  resetLessonCache,
-} from '@/lib/lesson-cache';
 
 const CURRICULUM_SETUP_COMPONENT = 'curriculum_setup';
 
-interface TopicStatusMap {
-  [subject: string]: TopicStatusRecord[];
-}
-
-interface ActiveLessonState {
-  subject: string;
-  topic: string;
-  topicIndex: number;
-  totalTopics: number;
-  lesson: LessonContentPayload;
-  session: LearningSession;
-}
 
 function createSetupPlaceholderMessage(): ChatMessage {
   return {
@@ -218,6 +189,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
           content: t
             ? t('chat.welcomeMessage', { country: request.country, language: request.language })
             : `👋 Welcome! Let me create your personalized learning plan for ${request.country} in ${request.language}...`,
+          sender: 'ai',
         });
 
         await ensureSetupMessage();
@@ -233,6 +205,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
               content: t
                 ? t('chat.errorMessage', { error: chunk.error })
                 : `❌ Error: ${chunk.error}`,
+              sender: 'ai',
             });
             break;
           }
@@ -265,14 +238,14 @@ export function useCurriculumChat(): UseCurriculumChatResult {
             id: 'current',
             country: request.country,
             language: request.language,
-            gradeLevel: (request as any).gradeLevel || prev.gradeLevel || 'middle',
+            gradeLevel: (request as any).gradeLevel || prev?.gradeLevel || 'middle',
             subjects: [...subjects],
             topics: { ...topics },
-        activeSession: prev.activeSession,
-        assessment: {
-          nextSubject: nextSubjectRef.current,
-        },
-            createdAt: prev.createdAt || Date.now(),
+            activeSession: prev?.activeSession,
+            assessment: {
+              nextSubject: nextSubjectRef.current,
+            },
+            createdAt: prev?.createdAt || Date.now(),
             updatedAt: Date.now(),
           }));
         }
@@ -302,6 +275,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
           content: t
             ? t('chat.errorMessage', { error: errorMsg })
             : `❌ Error: ${errorMsg}`,
+          sender: 'ai',
         });
       } finally {
         setIsGenerating(false);
@@ -341,6 +315,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         await addMessage({
           type: 'status',
           content: `Topics for ${subject} are still loading. Try again soon!`,
+          sender: 'ai',
         });
         return;
       }
@@ -352,6 +327,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         content: t
           ? t('chat.startingLesson', { subject })
           : `▶️ Creating a personalized path for ${subject}...`,
+        sender: 'ai',
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1200));
@@ -432,6 +408,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         await addMessage({
           type: 'error',
           content: errorMsg,
+          sender: 'ai',
         });
       }
     },
@@ -475,6 +452,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         content: isCorrect
           ? t?.('chat.practiceCorrect') ?? 'Great work! You nailed that question.'
           : t?.('chat.practiceIncorrect') ?? "Let's review that together.",
+        sender: 'ai',
       });
     },
     [addMessage, curriculum],
@@ -525,6 +503,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
       await addMessage({
         type: 'system',
         content: t ? t('chat.regeneratingMessage') : '♻️ Regenerating your curriculum...',
+        sender: 'ai',
       });
 
       // Generate new curriculum (will clear DB after success)

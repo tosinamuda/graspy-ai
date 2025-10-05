@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/prefer-nullish-coalescing */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable max-len */
 import { ChatOpenAI } from '@langchain/openai';
 import { StateGraph, Annotation } from '@langchain/langgraph';
 
@@ -151,6 +156,7 @@ function buildWorkflow() {
 export interface CurriculumRequest {
   country: string;
   language: string;
+  gradeLevel?: string;
 }
 
 export interface CurriculumResponse {
@@ -179,6 +185,7 @@ export async function generateCurriculum(
     subjects: result.subjects,
     topics: result.topics,
     currentStep: result.currentStep,
+     
     error: result.error || undefined,
   };
 }

@@ -7,13 +7,23 @@
             ],
             "outputs": [
                 "dist/**",
-                "build/**"
+                "build/**",
+                ".next/**",
+                "!.next/cache/**"
+            ]
+        },
+        "start": {
+            "dependsOn": [
+                "^start"
             ]
         },
         "dev": {
             "cache": false
         },
         "lint": {
+            "cache": false
+        },
+        "lint:fix": {
             "cache": false
         }
     }

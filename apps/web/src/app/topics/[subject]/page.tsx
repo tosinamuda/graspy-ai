@@ -12,6 +12,7 @@ import {
 
 interface SubjectParams {
   subject: string;
+  [key: string]: string | string[];
 }
 
 export default function SubjectTopicsPage() {

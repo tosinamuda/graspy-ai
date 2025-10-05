@@ -15,21 +15,21 @@ const CACHE_CONTROL_HEADER = 'public, max-age=3600';
 
 interface LessonSuccessPayload {
   lesson: {
-    title: string;
-    content: string;
-    keyPoints: string[];
-    examples: string[];
+    title: string,
+    content: string,
+    keyPoints: string[],
+    examples: string[],
     practice: {
-      question: string;
-      options: string[];
-      answerIndex: number;
-      correctFeedback: string;
-      incorrectFeedback: string;
-    };
+      question: string,
+      options: string[],
+      answerIndex: number,
+      correctFeedback: string,
+      incorrectFeedback: string,
+    },
     progress: {
-      current: number;
-      total: number;
-    };
+      current: number,
+      total: number,
+    },
   };
   session: LearningSessionPayload;
 }
@@ -37,7 +37,14 @@ interface LessonSuccessPayload {
 const mapSessionToLesson = (
   session: LearningSessionPayload,
 ): LessonSuccessPayload['lesson'] => {
-  const { topicIndex, totalTopics, topic, explanation, practice, metadata } = session;
+  const { 
+    topicIndex, 
+    totalTopics, 
+    topic, 
+    explanation, 
+    practice, 
+    metadata, 
+  } = session;
 
   const examples = practice.options.map((option, index) => {
     const label = String.fromCharCode('A'.charCodeAt(0) + index);
@@ -215,7 +222,7 @@ async function getLessonSession(req: Request, res: Response) {
   const lessonRequest: LessonRequest = {
     country: country as string,
     language: language as string,
-    gradeLevel: typeof gradeLevel === 'string' && gradeLevel.length > 0 ? (gradeLevel as string) : undefined,
+    gradeLevel: typeof gradeLevel === 'string' && gradeLevel.length > 0 ? (gradeLevel) : undefined,
     subject: subject as string,
     topic: topic as string,
     topicIndex: Number.isNaN(parsedIndex) ? 0 : parsedIndex,

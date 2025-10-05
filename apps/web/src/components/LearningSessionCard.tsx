@@ -29,7 +29,7 @@ export default function LearningSessionCard({
     );
   }
 
-  const { subject, topic, topicIndex, totalTopics, phase, explanation, practice, answerIndex, isCorrect } = session;
+  const { subject, topic, topicIndex, totalTopics, phase, explanation, practice, isCorrect } = session;
 
   return (
     <div className="w-full rounded-xl border border-teal-200 bg-white p-4 shadow-sm">

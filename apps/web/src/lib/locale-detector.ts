@@ -64,7 +64,7 @@ export function detectCountry(): { country: string | null; source: LocaleInfo['d
         }
       }
     }
-  } catch (e) {
+  } catch {
     // Continue to next strategy
   }
 
@@ -74,7 +74,7 @@ export function detectCountry(): { country: string | null; source: LocaleInfo['d
     if (countryFromTimezone) {
       return { country: countryFromTimezone, source: 'timezone' };
     }
-  } catch (e) {
+  } catch{
     // Intl API not available or error
   }
 

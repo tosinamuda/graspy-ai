@@ -11,6 +11,7 @@ import { DashboardProvider, useDashboardContext } from './dashboard-context';
 function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { t } = useI18n();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [userProfile, setUserProfile] = useState<any>(null);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
@@ -87,7 +88,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
           curriculum={curriculum}
           recommendedSubject={nextSubject}
           activeSession={curriculum?.activeSession}
-          onStartLessonContinue={continueSession}
+          onLessonContinue={continueSession}
           onSubmitLessonAnswer={(answerIndex) => submitSessionAnswer(answerIndex, t)}
           onFinishLesson={finishSession}
           onSendMessage={handleSendMessage}

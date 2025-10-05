@@ -49,6 +49,7 @@ export default function OnboardingPage() {
     const countryCode = detected.country !== 'UNKNOWN' ? detected.country : '';
 
     // Map language code to our supported languages
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const detectedLang = SUPPORTED_LANGUAGES.includes(detected.language as any);
     const langCode = detectedLang ? detected.language : 'en';
 
@@ -57,9 +58,11 @@ export default function OnboardingPage() {
     setLanguage(langCode);
   }, [router]);
 
-  const availableLanguages = country
-    ? allCountries.find(c => c.code === country)?.languages || []
-    : [...SUPPORTED_LANGUAGES];
+  const availableLanguages = useMemo(() => {
+    return country
+      ? allCountries.find(c => c.code === country)?.languages || []
+      : [...SUPPORTED_LANGUAGES];
+  }, [country, allCountries]);
 
   // Prepare options for SearchableSelect components
   const countryOptions = useMemo(() => {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 /**
  * Countries and Languages supported by graspy
  * Uses Intl API to support all countries while prioritizing crisis zones

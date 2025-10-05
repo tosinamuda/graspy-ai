@@ -2,6 +2,7 @@
 
 import { useI18n } from '@/lib/i18n-context';
 import LanguageSwitcher from './LanguageSwitcher';
+import Link from 'next/link';
 
 export default function TopMenu() {
   const { t } = useI18n();
@@ -22,24 +23,24 @@ export default function TopMenu() {
 
         {/* Navigation */}
         <nav className="flex items-center gap-6">
-          <a
+          <Link
             href="/dashboard"
             className="text-gray-700 hover:text-teal-600 font-medium transition-colors"
           >
             {t('menu.dashboard')}
-          </a>
-          <a
+          </Link>
+          <Link
             href="#"
             className="text-gray-700 hover:text-teal-600 font-medium transition-colors"
           >
             {t('menu.myProgress')}
-          </a>
-          <a
+          </Link>
+          <Link
             href="#"
             className="text-gray-700 hover:text-teal-600 font-medium transition-colors"
           >
             {t('menu.settings')}
-          </a>
+          </Link>
         </nav>
 
         {/* Right Section */}

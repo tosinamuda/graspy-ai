@@ -3,7 +3,6 @@
 import { useParams, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { getUserProfile } from '@/lib/user-storage';
-import { useI18n } from '@/lib/i18n-context';
 import { useDashboardContext } from '../dashboard-context';
 import { loadTopicProgress, saveTopicProgress, type TopicStatus } from '@/lib/topic-progress';
 import { getCachedLesson, setCachedLesson } from '@/lib/lesson-cache';
@@ -12,7 +11,6 @@ import { fetchLesson } from '@/lib/curriculum-api';
 export default function SubjectPage() {
   const params = useParams();
   const router = useRouter();
-  const { t } = useI18n();
   const userProfile = getUserProfile();
   const { curriculum } = useDashboardContext();
 

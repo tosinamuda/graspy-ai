@@ -19,6 +19,7 @@ const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [locale, setLocaleState] = useState('en');
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [messages, setMessages] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(true);
 
@@ -36,7 +37,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       const localeMessages = await import(`@/locales/${newLocale}.json`);
       setMessages(localeMessages.default);
       setLocaleState(newLocale);
-    } catch (error) {
+    } catch  {
       console.warn(`Locale ${newLocale} not found, falling back to English`);
       const fallbackMessages = await import(`@/locales/en.json`);
       setMessages(fallbackMessages.default);
@@ -69,6 +70,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   // Translation function with nested key support
   const t = (key: string, values?: Record<string, string | number>): string => {
     const keys = key.split('.');
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let result: any = messages;
 
     for (const k of keys) {

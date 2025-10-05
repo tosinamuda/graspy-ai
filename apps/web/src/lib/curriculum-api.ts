@@ -10,6 +10,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/a
 export interface CurriculumRequest {
   country: string;
   language: string;
+  gradeLevel?: string;
 }
 
 export interface CurriculumResponse {

@@ -18,6 +18,7 @@ export interface CurriculumData {
   assessment?: {
     nextSubject: string | null;
   };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   calendar?: any;
   createdAt: number;
   updatedAt: number;
@@ -54,6 +55,7 @@ export interface ChatMessage {
   type: 'system' | 'status' | 'subject' | 'complete' | 'error' | 'user' | 'component';
   content: string;
   timestamp: number;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: any;
   sender: 'ai' | 'user';
 }

@@ -1,5 +1,4 @@
 import { getRequestConfig } from 'next-intl/server';
-import { getUserProfile } from './lib/user-storage';
 
 export default getRequestConfig(async () => {
   // Get user's language from localStorage (client-side) or default to 'en'

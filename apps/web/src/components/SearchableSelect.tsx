@@ -128,9 +128,8 @@ export default function SearchableSelect({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg text-gray-900 placeholder:text-gray-500 ${
-            disabled ? 'bg-gray-100 cursor-not-allowed text-gray-500 placeholder:text-gray-400' : 'bg-white'
-          } ${className}`}
+          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg text-gray-900 placeholder:text-gray-500 ${disabled ? 'bg-gray-100 cursor-not-allowed text-gray-500 placeholder:text-gray-400' : 'bg-white'
+            } ${className}`}
           autoComplete="off"
         />
 
@@ -160,16 +159,15 @@ export default function SearchableSelect({
                     {group}
                   </div>
                 )}
-                {groupOptions.map((option, index) => {
+                {groupOptions.map((option) => {
                   const globalIndex = filteredOptions.indexOf(option);
                   return (
                     <button
                       key={option.value}
                       type="button"
                       onClick={() => handleSelect(option.value)}
-                      className={`w-full text-left px-4 py-2 hover:bg-indigo-50 transition-colors ${
-                        globalIndex === highlightedIndex ? 'bg-indigo-100' : ''
-                      } ${value === option.value ? 'bg-indigo-50 font-medium text-indigo-900' : 'text-gray-900'}`}
+                      className={`w-full text-left px-4 py-2 hover:bg-indigo-50 transition-colors ${globalIndex === highlightedIndex ? 'bg-indigo-100' : ''
+                        } ${value === option.value ? 'bg-indigo-50 font-medium text-indigo-900' : 'text-gray-900'}`}
                       onMouseEnter={() => setHighlightedIndex(globalIndex)}
                     >
                       {option.label}
