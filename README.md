@@ -122,8 +122,8 @@
 ### Backend/API Layer
 - **Runtime:** Vercel Serverless Functions (Node.js)
 - **API Routes:**
-  - `/api/curriculum` - Generate full curriculum
-  - `/api/lesson` - Generate lesson content for a topic
+  - `POST /api/curriculum/generate` – Generate full curriculum (subjects + topics) via LangGraph
+  - `POST /api/curriculum/lesson` – Generate lesson session (explanation, learning objectives, practice question, culturally aware feedback); responds with `metadata` containing `country`, `language`, `gradeLevel`, and `learningObjectives` so UI and backend share the same context
   - `/api/chat` - Chat tutor interactions
   - `/api/quiz-feedback` - Grade and explain quiz answers
 

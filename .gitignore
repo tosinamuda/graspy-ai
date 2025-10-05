@@ -1,41 +1,95 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# ──────────────────────────────
+# Global ignores
+# ──────────────────────────────
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.*
-.yarn/*
-!.yarn/patches
-!.yarn/plugins
-!.yarn/releases
-!.yarn/versions
-
-# testing
-/coverage
-
-# next.js
-/.next/
-/out/
-
-# production
-/build
-
-# misc
-.DS_Store
-*.pem
-
-# debug
+# Node
+node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+package-lock.json
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# Build / dist outputs
+dist/
+build/
+.next/
+out/
+.vercel/
+.cache/
+coverage/
+tmp/
+temp/
 
-# vercel
-.vercel
+# Turborepo cache
+.turbo/
+turbo/
 
-# typescript
+# TypeScript
 *.tsbuildinfo
-next-env.d.ts
+
+# Logs and runtime
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Local envs
+.env
+.env.*
+!.env.example
+
+# IDE / Editor cruft
+.vscode/
+.idea/
+.DS_Store
+*.swp
+*.swo
+
+# macOS nonsense
+.AppleDouble
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# OS & lock junk
+Icon?
+desktop.ini
+
+# ──────────────────────────────
+# Project-specific ignores
+# ──────────────────────────────
+
+# Next.js (apps/web)
+apps/web/.next/
+apps/web/out/
+apps/web/.vercel/
+
+# Express + TypeScript (apps/server)
+apps/server/dist/
+apps/server/build/
+apps/server/.env.local
+
+# Tests
+coverage/
+__pycache__/
+__tests__/temp/
+jest-cache/
+
+# VSCode settings for workspaces
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+
+# Lint / prettier caches
+.eslintcache
+.prettier-cache
+
+# Optional: local database / storage
+data/
+.db/
+sqlite.db
+*.sqlite

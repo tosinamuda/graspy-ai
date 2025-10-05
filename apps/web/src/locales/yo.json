@@ -1,0 +1,86 @@
+{
+  "dashboard": {
+    "welcome": "Káàbọ̀ padà! 👋",
+    "learningIn": "Kíkọ́ ní {language} • {country}",
+    "yourLearningPlan": "Ètò Ẹ̀kọ́ Rẹ",
+    "thisWeeksPlan": "Ètò Ọ̀sẹ̀ Yìí",
+    "progress": "Ìlọsíwájú",
+    "topics": "àkòrí",
+    "topicsLoading": "Ń kó àkòrí jọ...",
+    "clickToStart": "Tẹ lórí kókó-ọ̀rọ̀ kankan láti bẹ̀rẹ̀ kíkọ́! 📚",
+    "topicsComingSoon": "Àwọn kókó-ọ̀rọ̀ ń bọ̀ lọ́nà...",
+    "dailyPlanComingSoon": "📅 Ètò ojoojúmọ́ ń bọ̀ lọ́nà...",
+    "regenerateCurriculum": "Tún Ètò-ẹ̀kọ́ Ṣe",
+    "generatingCurriculum": "Dídá ètò-ẹ̀kọ́ rẹ...",
+    "watchChat": "Wo ojú-ìwé ìfọ̀rọ̀wérọ̀ fún àwọn ìmúdójúìwọ̀n lákokò gidi!",
+    "noSubjectsYet": "Kò sí àwọn kókó-ẹ̀kọ́ síbẹ̀",
+    "willGenerateCurriculum": "Graspy yóò ṣẹ̀dá ètò-ẹ̀kọ́ àkànṣe rẹ láìfọwọ́yí!",
+    "nextDiagnostic": "Ìdánwò tó kàn",
+    "startLesson": "Bẹ̀rẹ̀ ìkọ́ni",
+    "lessonInProgress": "Ìkọ́ni ń lọ lọwọ",
+    "lessonComplete": "Ìkọ́ni parí",
+    "diagnosticComplete": "Ìdánwò parí",
+    "setup": {
+      "title": "Ìmúlò Ètò Ẹ̀kọ́",
+      "subtitle": "A ó kọjá gbogbo ìgbésẹ̀ pọ̀",
+      "generate": "Ṣẹ̀dá àwọn kókó àti àkòrí",
+      "generateDescription": "Ṣíṣiṣẹ̀ ètò ìbẹ̀rẹ̀ tó yẹ fún profaili rẹ",
+      "diagnostic": "Ìdánwò ìdánimọ̀ akẹ́kọ̀ọ́",
+      "diagnosticDescription": "A ó yan kókó kan láti bi ìbéèrè díẹ̀",
+      "diagnosticNext": "Tó kàn báyìí: ìdánwò kíákíá fún {subject}",
+      "startDiagnostic": "Ṣetan nígbàtí o bá ṣetan — tẹ̀ láti bẹ̀rẹ̀",
+      "path": "Ọ̀nà ẹ̀kọ́ tí a ṣe fún ọ",
+      "pathDescription": "Ṣíṣètò àkòrí àti ìṣètò ọ̀sẹ̀",
+      "session": "Ìkọ́ni àkọ́kọ́",
+      "sessionDescription": "Ẹ̀kọ́ ibánisọ̀rọ̀ pẹ̀lú àlàyé àti àṣàyàn ìdánwò",
+      "complete": "Parí",
+      "inProgress": "Ní ìlera",
+      "subjectsReady": "Àwọn kókó-ẹ̀kọ́ {count} ti ṣetan",
+      "topicsCount": "Àwọn kókó-ọ̀rọ̀ {count}",
+      "diagnosticSummary": "Ìdánwò {count} ti parí",
+      "lessonReady": "Ìkọ́ni ti ṣetan",
+      "lessonInProgress": "Ìkọ́ni ń lọ lọwọ"
+    }
+  },
+  "chat": {
+    "graspyTitle": "graspy",
+    "graspySubtitle": "Olùkọ́ tó tọ́ fún ọ",
+    "graspyWelcome": "Ẹ káàbọ̀! Mo jẹ́ Graspy, olùrànlọ́wọ́ ẹ̀kọ́ AI rẹ. Emi yóò ràn ọ́ lọ́wọ́ láti ṣẹ̀dá ètò-ẹ̀kọ́ àkànṣe.",
+    "welcomeMessage": "👋 Ẹ káàbọ̀! Jẹ́ kí n ṣẹ̀dá ètò ẹ̀kọ́ àkànṣe rẹ fún {country} ní {language}...",
+    "analyzingProfile": "✓ Títúpalẹ̀ profaili rẹ...",
+    "generatingSubjects": "⏳ Dídá àwọn kókó-ẹ̀kọ́...",
+    "generatingTopics": "⏳ Dídá àwọn kókó-ọ̀rọ̀ fún {subject}...",
+    "topicsGenerated": "✓ A ti fi {count} kókó-ọ̀rọ̀ kún",
+    "addedToCurriculum": "A ti fi kún ètò-ẹ̀kọ́ rẹ",
+    "successMessage": "✅ A ti ṣẹ̀dá àwọn kókó-ẹ̀kọ́ {subjectCount} pẹ̀lú {topicCount} kókó-ọ̀rọ̀ ní àṣeyọrí fún ètò ẹ̀kọ́ rẹ!",
+    "nextDiagnostic": "▶️ Tó kàn báyìí: ìdánwò ìdánimọ̀ kíákíá fún {subject}. Ẹ jẹ́ ká mọ ibi tá a ti máa bẹ̀rẹ̀!",
+    "startingLesson": "▶️ Ṣíṣe ìkọ́ni àdáni fún {subject}...",
+    "practiceCorrect": "Ìṣẹ́ lọ́wọ́! Ó tọ́nà patapata.",
+    "practiceIncorrect": "Ẹ jẹ́ ká tún wo àṣàyàn yìí.",
+    "regeneratingMessage": "♻️ Tun ètò-ẹ̀kọ́ rẹ ṣe...",
+    "errorMessage": "❌ Àṣìṣe: {error}",
+    "creatingPlan": "Dídá ètò ẹ̀kọ́ àkànṣe rẹ...",
+    "creatingSubjects": "Dídá àwọn kókó-ẹ̀kọ́",
+    "creatingDailyPlan": "Dídá ètò ojoojúmọ́",
+    "planReady": "✅ Ètò ẹ̀kọ́ rẹ ti ṣetán! Mo ti ṣẹ̀dá àwọn kókó-ẹ̀kọ́ {subjectCount} pẹ̀lú àwọn kókó-ọ̀rọ̀ {topicCount} tí a ṣe fún ọ.",
+    "askPlaceholder": "Béèrè ohun eyíkéyìí lọ́wọ́ graspy...",
+    "send": "Firánṣẹ́",
+    "generating": "Ń ṣẹ̀dá..."
+  },
+  "subjects": {
+    "mathematics": "Ìṣirò",
+    "science": "Sáyẹ́ǹsì",
+    "languageArts": "Èdè Yorùbá",
+    "socialStudies": "Ìmọ̀ Ìjọba"
+  },
+  "common": {
+    "loading": "Ń kojọpọ̀...",
+    "changeLanguage": "Yí Èdè Padà"
+  },
+  "menu": {
+    "tagline": "Olùkọ́ tó tọ́ fún ọ",
+    "dashboard": "Pátákó Àkóso",
+    "myProgress": "Ìlọsíwájú Mi",
+    "settings": "Àwọn Ètò"
+  }
+}
