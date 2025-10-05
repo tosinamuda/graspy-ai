@@ -4,7 +4,7 @@
 
 **Providing personalized, culturally-aware education to 244 million out-of-school children in crisis zones, IDP camps, and underserved communities worldwide.**
 
-[![FutureStack GenAI Hackathon 2025](https://img.shields.io/badge/Hackathon-FutureStack%20GenAI%202025-blue)](https://futurestack.ai) [![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org) [![npm workspace](https://img.shields.io/badge/npm-workspace-red)](https://docs.npmjs.com/cli/v7/using-npm/workspaces)
+[![FutureStack GenAI Hackathon 2025](https://img.shields.io/badge/Hackathon-FutureStack%20GenAI%202025-blue)](https://www.wemakedevs.org/hackathons/futurestack25) [![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org) [![npm workspace](https://img.shields.io/badge/npm-workspace-red)](https://docs.npmjs.com/cli/v7/using-npm/workspaces)
 
 </div>
 
@@ -154,7 +154,7 @@ npm >= 10.9.2
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-org/graspy.git
+git clone https://github.com/tosinamuda/graspy.git
 cd graspy
 ```
 
@@ -171,43 +171,26 @@ This will install dependencies for both `apps/web` and `apps/server`.
 ### 3. Environment Configuration
 
 #### Backend Environment Variables
+Copy sample enviornment variable from `.env.example` to `.env.development` in [`apps/server/config/`](apps/server/config/):
 
-Create environment files in [`apps/server/config/`](apps/server/config/):
-
-**`.env.development`** (already exists):
-
-```env
-## Environment ##
-NODE_ENV=development
-
-## Server ##
-PORT=8081
-HOST=localhost
-
-## Logging ##
-JET_LOGGER_MODE=CONSOLE
-JET_LOGGER_FILEPATH=jet-logger.log
-JET_LOGGER_TIMESTAMP=TRUE
-JET_LOGGER_FORMAT=LINE
-
-## AI Services ##
-OPENROUTER_API_KEY=your_openrouter_api_key_here
+```bash
+cd apps/server/config
+cp .env.example .env.development
 ```
 
-**`.env.production`**:
+**How to get API Keys:**
 
-```env
-NODE_ENV=production
-PORT=8081
-HOST=0.0.0.0
-OPENROUTER_API_KEY=your_production_api_key
-DISABLE_HELMET=false
-```
+1. **OpenRouter**: Sign up at [openrouter.ai](https://openrouter.ai) → Get API key
+2. Create a `.env.development` file in `apps/server/config/`
+3. Add your `OPENROUTER_API_KEY`
+
 
 #### Frontend Environment Variables
 
-Create in [`apps/web/`](apps/web/):
+Copy sample enviornment variable from `.env.example` to `.env` in [`apps/web/`](apps/web/):
 
+
+Adjust the environment variable as you see fit 
 **`.env.local`**:
 
 ```env
@@ -261,34 +244,6 @@ npm run build
 npm run start
 ```
 
----
-
-## 🔑 Required Environment Variables
-
-### Backend (`apps/server/config/.env.*`)
-
-| Variable             | Required | Description                          | Example                               |
-| -------------------- | -------- | ------------------------------------ | ------------------------------------- |
-| `NODE_ENV`           | ✅       | Environment mode                     | `development` / `production` / `test` |
-| `PORT`               | ✅       | Server port                          | `8081`                                |
-| `HOST`               | ✅       | Server host                          | `localhost` / `0.0.0.0`               |
-| `OPENROUTER_API_KEY` | ✅       | OpenRouter API key for LLM access    | `sk-or-v1-...`                        |
-| `JET_LOGGER_MODE`    | ⚠️       | Logging output mode                  | `CONSOLE` / `FILE`                    |
-| `DISABLE_HELMET`     | ❌       | Disable security headers (prod only) | `false`                               |
-
-### Frontend (`apps/web/.env.local`)
-
-| Variable              | Required | Description          | Example                 |
-| --------------------- | -------- | -------------------- | ----------------------- |
-| `NEXT_PUBLIC_API_URL` | ✅       | Backend API endpoint | `http://localhost:8081` |
-
-**How to get API Keys:**
-
-1. **OpenRouter**: Sign up at [openrouter.ai](https://openrouter.ai) → Get API key
-2. Create a `.env.development` file in `apps/server/config/`
-3. Add your `OPENROUTER_API_KEY`
-
----
 
 ## 🤖 Integration Details
 
