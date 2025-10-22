@@ -6,7 +6,7 @@ import type { LessonSlide } from '@/lib/lesson-types';
  * Connects Next.js frontend to the curriculum generation backend
  */
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export interface CurriculumRequest {
   country: string;

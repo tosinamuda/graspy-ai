@@ -4,16 +4,16 @@ module.exports = {
             name: "graspy-web",                 // Next.js
             cwd: "apps/web",
             script: "node_modules/next/dist/bin/next",
-            args: "start -p 3000 -H 0.0.0.0",
+            args: "start -p 3001 -H 0.0.0.0",
             env: {
                 NODE_ENV: "production",
-                PORT: "3000",
-                NEXT_PUBLIC_API_URL: "http://localhost:8081/api"
+                PORT: "3001",
+                NEXT_PUBLIC_API_URL: "https://graspy.tosinamuda.com/api"
             },
             env_production: {
                 NODE_ENV: "production",
-                PORT: "3000",
-                NEXT_PUBLIC_API_URL: "http://localhost:8081/api"
+                PORT: "3001",
+                NEXT_PUBLIC_API_URL: "https://graspy.tosinamuda.com/api"
             },
             instances: 1,                       // keep Next single-process; avoid ISR cache weirdness
             exec_mode: "fork",
@@ -28,12 +28,12 @@ module.exports = {
             env: {
                 NODE_ENV: "production",
                 PORT: "8081",
-                NEXT_ORIGIN: "http://127.0.0.1:3000"
+                NEXT_ORIGIN: "http://127.0.0.1:3001"
             },
             env_production: {
                 NODE_ENV: "production",
                 PORT: "8081",
-                NEXT_ORIGIN: "http://127.0.0.1:3000"
+                NEXT_ORIGIN: "http://127.0.0.1:3001"
             },
             instances: 1,                        // run a single worker in PM2 like the manual command
             exec_mode: "fork",
