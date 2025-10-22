@@ -210,7 +210,7 @@ class LessonSlidesPayload(BaseModel):
         default_factory=list,
         alias="learningObjectives",
         min_length=3,
-        max_length=3,
+        max_length=5,
     )
     slides: List[LessonSlide] = Field(min_length=5, max_length=5)
 

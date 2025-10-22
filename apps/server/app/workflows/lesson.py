@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from strands import tool  # type: ignore[import-not-found]
 
@@ -467,6 +467,158 @@ def _build_practice_tool(runtime: StrandsRuntime, max_tokens_override: Optional[
     return practice_builder
 
 
+def _extract_json_from_text(raw_text: Optional[str]) -> Optional[str]:
+    if not raw_text:
+        return None
+
+    stripped = raw_text.strip()
+    if not stripped:
+        return None
+
+    # Direct JSON string
+    if stripped[0] in ("{", "["):
+        try:
+            json.loads(stripped)
+            return stripped
+        except json.JSONDecodeError:
+            pass
+
+    # Try to locate the first JSON object/array within the text
+    for opener, closer in (("{", "}"), ("[", "]")):
+        start = stripped.find(opener)
+        end = stripped.rfind(closer)
+        if start != -1 and end != -1 and end > start:
+            candidate = stripped[start : end + 1]
+            try:
+                json.loads(candidate)
+            except json.JSONDecodeError:
+                continue
+            return candidate
+
+    return None
+
+
+def _extract_tool_result_text(tool_result: Any) -> Optional[str]:
+    if not isinstance(tool_result, dict):
+        return None
+
+    for block in tool_result.get("content", []) or []:
+        if not isinstance(block, dict):
+            continue
+
+        if "json" in block:
+            try:
+                return json.dumps(block["json"], ensure_ascii=False)
+            except TypeError:
+                continue
+
+        text_value = block.get("text")
+        candidate = _extract_json_from_text(text_value if isinstance(text_value, str) else None)
+        if candidate:
+            return candidate
+
+    return None
+
+
+def _extract_lesson_orchestrator_output(result: Any, messages: Sequence[dict[str, Any]]) -> str:
+    message = getattr(result, "message", None)
+    if isinstance(message, dict):
+        for content_block in message.get("content", []) or []:
+            if not isinstance(content_block, dict):
+                continue
+            text_candidate = _extract_json_from_text(
+                content_block.get("text") if isinstance(content_block.get("text"), str) else None
+            )
+            if text_candidate:
+                return text_candidate
+
+    tool_use_by_id: dict[str, str] = {}
+    for message_entry in messages:
+        if not isinstance(message_entry, dict):
+            continue
+        for block in message_entry.get("content", []) or []:
+            if not isinstance(block, dict):
+                continue
+            tool_use = block.get("toolUse")
+            if isinstance(tool_use, dict):
+                tool_use_id = tool_use.get("toolUseId")
+                tool_name = tool_use.get("name")
+                if isinstance(tool_use_id, str) and isinstance(tool_name, str):
+                    tool_use_by_id[tool_use_id] = tool_name
+
+    tool_results_by_name: dict[str, Any] = {}
+    for message_entry in messages:
+        if not isinstance(message_entry, dict):
+            continue
+        for block in message_entry.get("content", []) or []:
+            if not isinstance(block, dict):
+                continue
+            tool_result = block.get("toolResult")
+            if isinstance(tool_result, dict):
+                tool_use_id = tool_result.get("toolUseId")
+                if isinstance(tool_use_id, str):
+                    tool_name = tool_use_by_id.get(tool_use_id)
+                    if tool_name:
+                        tool_results_by_name[tool_name] = tool_result
+
+    # Search from the end for any JSON typed text the model may have produced.
+    for message_entry in reversed(messages):
+        if not isinstance(message_entry, dict):
+            continue
+        for block in message_entry.get("content", []) or []:
+            if not isinstance(block, dict):
+                continue
+            text_candidate = _extract_json_from_text(
+                block.get("text") if isinstance(block.get("text"), str) else None
+            )
+            if text_candidate:
+                return text_candidate
+
+    slide_text = _extract_tool_result_text(tool_results_by_name.get("slide_designer"))
+    practice_text = _extract_tool_result_text(tool_results_by_name.get("practice_builder"))
+
+    if slide_text and practice_text:
+        try:
+            slides_json = json.loads(slide_text)
+            practice_json = json.loads(practice_text)
+        except json.JSONDecodeError:
+            return ""
+        return json.dumps(
+            {
+                "slides": slides_json,
+                "practice": practice_json,
+            },
+            ensure_ascii=False,
+        )
+
+    return ""
+
+
+async def _invoke_lesson_orchestrator(
+    runtime: StrandsRuntime,
+    *,
+    prompt: str,
+    slide_tool: Any,
+    practice_tool: Any,
+    max_tokens: int,
+) -> Dict[str, Any]:
+    agent = runtime.make_agent(
+        system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
+        tools=[slide_tool, practice_tool],
+        temperature=0.0,
+        max_tokens=max_tokens,
+    )
+    result = await agent.invoke_async(prompt)  # type: ignore[attr-defined]
+    response_text = _extract_lesson_orchestrator_output(result, agent.messages)
+    if not response_text:
+        raise ValueError("Orchestrator agent returned empty response")
+
+    try:
+        return json.loads(response_text)
+    except json.JSONDecodeError as exc:
+        raise ValueError("Orchestrator agent returned invalid JSON") from exc
+
+
 async def generate_lesson_assets(
     runtime: StrandsRuntime,
     request: LessonRequest,
@@ -499,18 +651,16 @@ async def generate_lesson_assets(
     request_json = json.dumps(request.model_dump(by_alias=True), ensure_ascii=False)
 
     try:
-        # Use invoke() for orchestrator with tools (NOT structured_output)
-        # The orchestrator will call the tools and return a JSON string
-        response_text = await runtime.invoke(
-            f"Lesson request JSON:\n{request_json}\n\nFollow the procedure above and return the final JSON.",
-            system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
-            tools=[slide_tool, practice_tool],
-            temperature=0.0,
-            max_tokens=1024,
+        orchestrator_prompt = (
+            f"Lesson request JSON:\n{request_json}\n\nFollow the procedure above and return the final JSON."
         )
-
-        # Parse the orchestrator's JSON response
-        response_data = json.loads(response_text)
+        response_data = await _invoke_lesson_orchestrator(
+            runtime,
+            prompt=orchestrator_prompt,
+            slide_tool=slide_tool,
+            practice_tool=practice_tool,
+            max_tokens=slide_token_limit,
+        )
 
         # Validate and sanitize the payloads
         slides_payload = _sanitize_slide_payload(

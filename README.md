@@ -139,24 +139,24 @@ graph LR
 
 ### Backend ([apps/server/](apps/server/))
 
-| Technology     | Purpose                                      |
-| -------------- | -------------------------------------------- |
-| **FastAPI** | Modern Python web framework with async support |
-| **Pydantic** | Data validation and settings management |
-| **Python 3.12+** | Programming language |
-| **uv** | Fast Python package manager |
-| **AWS Strands** | AI agent framework for curriculum generation |
-| **SSE (Server-Sent Events)** | Real-time streaming responses |
+| Technology                   | Purpose                                        |
+| ---------------------------- | ---------------------------------------------- |
+| **FastAPI**                  | Modern Python web framework with async support |
+| **Pydantic**                 | Data validation and settings management        |
+| **Python 3.12+**             | Programming language                           |
+| **uv**                       | Fast Python package manager                    |
+| **AWS Strands**              | AI agent framework for curriculum generation   |
+| **SSE (Server-Sent Events)** | Real-time streaming responses                  |
 
 **Location**: [`/apps/server/`](apps/server/)
 
 ### AI & Inference
 
-| Service        | Purpose                                       |
-| -------------- | --------------------------------------------- |
-| **AWS Bedrock** | LLM Inferencing                       |
+| Service           | Purpose                                       |
+| ----------------- | --------------------------------------------- |
+| **AWS Bedrock**   | LLM Inferencing                               |
 | **AWS Nova Lite** | Primary language model for content generation |
-| **AWS Strand**   | Agentic AI framework for orchestrating agents          |
+| **AWS Strand**    | Agentic AI framework for orchestrating agents |
 
 ### Development Tools
 
@@ -171,14 +171,15 @@ graph LR
 
 Before you begin, ensure you have the following installed:
 
-| Tool | Version | Installation |
-|------|---------|--------------|
-| **Node.js** | >= 18.0.0 | [Download](https://nodejs.org/) |
-| **npm** | >= 10.9.2 | Comes with Node.js |
-| **Python** | >= 3.12 | [Download](https://www.python.org/) |
-| **uv** | Latest | `pip install uv` or [Install Guide](https://docs.astral.sh/uv/getting-started/installation/) |
+| Tool        | Version   | Installation                                                                                 |
+| ----------- | --------- | -------------------------------------------------------------------------------------------- |
+| **Node.js** | >= 18.0.0 | [Download](https://nodejs.org/)                                                              |
+| **npm**     | >= 10.9.2 | Comes with Node.js                                                                           |
+| **Python**  | >= 3.12   | [Download](https://www.python.org/)                                                          |
+| **uv**      | Latest    | `pip install uv` or [Install Guide](https://docs.astral.sh/uv/getting-started/installation/) |
 
 **Quick Check:**
+
 ```bash
 node --version   # Should be >= 18.0.0
 npm --version    # Should be >= 10.9.2
@@ -206,6 +207,7 @@ npm install
 ```
 
 This command will:
+
 - Install Node.js dependencies for the frontend (`apps/web`)
 - Install Python dependencies for the backend (`apps/server`) via uv
 - Set up the workspace structure
@@ -261,8 +263,8 @@ STRANDS_STREAMING=true
 # ============================================================
 # Lesson Configuration
 # ============================================================
-LESSON_SLIDE_MAX_TOKENS=9000
-LESSON_PRACTICE_MAX_TOKENS=5000
+LESSON_SLIDE_MAX_TOKENS=20000
+LESSON_PRACTICE_MAX_TOKENS=20000
 ```
 
 **📝 How to Get AWS Credentials:**
@@ -275,6 +277,7 @@ LESSON_PRACTICE_MAX_TOKENS=5000
 6. **Add to .env**: Copy the credentials to your `.env` file
 
 **📚 For more details on all environment variables, see:**
+
 - [apps/server/ENVIRONMENT_VARIABLES.md](apps/server/ENVIRONMENT_VARIABLES.md)
 - [apps/server/.env.example](apps/server/.env.example)
 
@@ -325,6 +328,7 @@ This uses **Turborepo** to run both applications concurrently:
 - ✅ **Backend**: [http://localhost:8081](http://localhost:8081) - FastAPI with uvicorn
 
 **What's running:**
+
 - Frontend dev server with hot module replacement
 - Backend API with auto-reload on file changes
 - Both apps are connected and ready for development
@@ -369,6 +373,7 @@ npm run start
 ```
 
 **Production Ports:**
+
 - Frontend: [http://localhost:3000](http://localhost:3000)
 - Backend: [http://localhost:8081](http://localhost:8081)
 
@@ -392,6 +397,7 @@ Once everything is running, verify the setup:
 **Problem: `ModuleNotFoundError: No module named 'sse_starlette'`**
 
 Solution:
+
 ```bash
 cd apps/server
 uv sync  # Reinstall Python dependencies
@@ -400,6 +406,7 @@ uv sync  # Reinstall Python dependencies
 **Problem: AWS Bedrock authentication errors**
 
 Solution:
+
 - Verify your AWS credentials are correct in `.env`
 - Check that Bedrock is enabled in your AWS region
 - Ensure your IAM user has `bedrock:InvokeModel` permissions
@@ -407,6 +414,7 @@ Solution:
 **Problem: Port 8081 is already in use**
 
 Solution:
+
 ```bash
 # Change the port in apps/server/.env
 PORT=8082
@@ -420,6 +428,7 @@ NEXT_PUBLIC_API_URL=http://localhost:8082/api
 **Problem: Cannot connect to backend**
 
 Solution:
+
 - Verify backend is running: `curl http://localhost:8081/api/health`
 - Check `NEXT_PUBLIC_API_URL` in `apps/web/.env.local`
 - Clear Next.js cache: `rm -rf apps/web/.next`
@@ -427,6 +436,7 @@ Solution:
 **Problem: Module not found errors**
 
 Solution:
+
 ```bash
 # Reinstall dependencies
 rm -rf node_modules apps/web/node_modules
@@ -438,6 +448,7 @@ npm install
 **Problem: `uv` command not found**
 
 Solution:
+
 ```bash
 # Install uv
 pip install uv
@@ -449,6 +460,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 **Problem: Permission denied errors**
 
 Solution:
+
 ```bash
 # On macOS/Linux, you might need to fix permissions
 sudo chown -R $(whoami) ~/.npm
@@ -470,7 +482,6 @@ sudo chown -R $(whoami) node_modules
 - [ ] Frontend accessible at http://localhost:3000
 - [ ] Backend API docs accessible at http://localhost:8081/docs
 - [ ] Test curriculum generation working
-
 
 ## 🤖 AI Integration & Architecture
 
@@ -552,21 +563,21 @@ When your backend is running, you can access:
 
 ### Key API Endpoints
 
-| Endpoint | Method | Description |
-|----------|--------|-------------|
-| `/api/health` | GET | Health check |
-| `/api/curriculum/generate` | POST | Generate personalized curriculum (SSE stream) |
-| `/api/curriculum/chat` | POST | Chat with AI tutor about curriculum |
-| `/api/lesson/{topicIndex}` | GET | Get specific lesson content |
+| Endpoint                   | Method | Description                                   |
+| -------------------------- | ------ | --------------------------------------------- |
+| `/api/health`              | GET    | Health check                                  |
+| `/api/curriculum/generate` | POST   | Generate personalized curriculum (SSE stream) |
+| `/api/curriculum/chat`     | POST   | Chat with AI tutor about curriculum           |
+| `/api/lesson/{topicIndex}` | GET    | Get specific lesson content                   |
 
 ### Frontend Routes
 
-| Route | Description |
-|-------|-------------|
-| `/` | Homepage with language selection |
-| `/topics/[subject]` | Subject curriculum overview |
-| `/lesson` | Individual lesson page with chat |
-| `/app/dashboard` | Student dashboard (future) |
+| Route               | Description                      |
+| ------------------- | -------------------------------- |
+| `/`                 | Homepage with language selection |
+| `/topics/[subject]` | Subject curriculum overview      |
+| `/lesson`           | Individual lesson page with chat |
+| `/app/dashboard`    | Student dashboard (future)       |
 
 ### Useful Documentation
 
@@ -652,9 +663,8 @@ If you find Graspy helpful, please:
 
 **Made with ❤️ for 244 million out-of-school children worldwide**
 
-*Education is a right, not a privilege.*
+_Education is a right, not a privilege._
 
 ---
-
 
 </div>
