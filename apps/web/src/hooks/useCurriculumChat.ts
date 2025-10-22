@@ -7,6 +7,8 @@ import {
   streamCurriculum,
   type CurriculumRequest,
   type LessonRequest,
+  askTutor,
+  type TutorChatHistoryEntry,
 } from '@/lib/curriculum-api';
 import {
   saveCurriculum,
@@ -18,44 +20,46 @@ import {
   updateCurriculum,
   type ChatMessage,
   type CurriculumData,
+  type CurriculumSubject,
   type LearningSession,
 } from '@/lib/curriculum-db';
+import { setCachedLesson } from '@/lib/lesson-cache';
+import { loadTopicProgress, saveTopicProgress } from '@/lib/topic-progress';
+import { createSlug, normalizeSubjectList } from '@/lib/slug';
 
-const CURRICULUM_SETUP_COMPONENT = 'curriculum_setup';
-
-
-function createSetupPlaceholderMessage(): ChatMessage {
-  return {
-    id: `temp-setup-${Date.now()}`,
-    type: 'component',
-    content: '',
-    timestamp: Number.MAX_SAFE_INTEGER,
-    sender: 'ai',
-    metadata: { component: CURRICULUM_SETUP_COMPONENT, placeholder: true },
-  };
+export interface LearningContext {
+  subject: CurriculumSubject | null;
+  topic: string | null;
+  relatedTopics: string[];
 }
 
 interface UseCurriculumChatResult {
   messages: ChatMessage[];
   curriculum: CurriculumData | null;
   isGenerating: boolean;
+  isPrimingLesson: boolean;
   error: string | null;
   generate: (request: CurriculumRequest, t?: (key: string, params?: any) => string) => Promise<void>;
   regenerate: (request: CurriculumRequest, t?: (key: string, params?: any) => string) => Promise<void>;
   loadExistingData: () => Promise<void>;
-  nextSubject: string | null;
-  sendUserMessage: (content: string) => Promise<void>;
-  startLesson: (subject: string, t?: (key: string, params?: any) => string) => Promise<void>;
+  nextSubject: CurriculumSubject | null;
+  sendUserMessage: (
+    content: string,
+    t?: (key: string, params?: any) => string,
+  ) => Promise<void>;
+  startLesson: (subject: CurriculumSubject, t?: (key: string, params?: any) => string) => Promise<void>;
   continueSession: () => Promise<void>;
   submitSessionAnswer: (
     answerIndex: number,
     t?: (key: string, params?: any) => string,
   ) => Promise<void>;
   finishSession: () => Promise<void>;
+  learningContext: LearningContext;
+  setLearningContext: (context: Partial<LearningContext>) => void;
 }
 
 export function useCurriculumChat(): UseCurriculumChatResult {
-  const [messages, setMessages] = useState<ChatMessage[]>(() => [createSetupPlaceholderMessage()]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [curriculum, setCurriculum] = useState<CurriculumData | null>({
     id: 'current',
     country: '',
@@ -70,51 +74,105 @@ export function useCurriculumChat(): UseCurriculumChatResult {
     updatedAt: Date.now(),
   });
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isPrimingLesson, setIsPrimingLesson] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [nextSubject, setNextSubject] = useState<string | null>(null);
-  const nextSubjectRef = useRef<string | null>(null);
+  const [nextSubject, setNextSubject] = useState<CurriculumSubject | null>(null);
+  const nextSubjectRef = useRef<CurriculumSubject | null>(null);
   const messagesRef = useRef<ChatMessage[]>(messages);
+  const pendingMessagesRef = useRef<ChatMessage[]>([]);
+  const [learningContext, setLearningContextState] = useState<LearningContext>({
+    subject: null,
+    topic: null,
+    relatedTopics: [],
+  });
+
+  const setLearningContext = useCallback((context: Partial<LearningContext>) => {
+    setLearningContextState((prev) => ({
+      subject: context.subject !== undefined ? context.subject : prev.subject,
+      topic: context.topic !== undefined ? context.topic : prev.topic,
+      relatedTopics: context.relatedTopics !== undefined ? context.relatedTopics : prev.relatedTopics,
+    }));
+  }, []);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
-  const ensureSetupMessage = useCallback(async () => {
-    const exists = messagesRef.current.some(
-      (message) =>
-        message.type === 'component' &&
-        message.metadata?.component === CURRICULUM_SETUP_COMPONENT &&
-        !message.metadata?.placeholder,
-    );
-
-    if (exists) {
+  const clearPendingMessages = useCallback(() => {
+    if (pendingMessagesRef.current.length === 0) {
       return;
     }
 
-    const setupMessage = await saveChatMessage({
-      type: 'component',
-      content: '',
-      sender: 'ai',
-      metadata: { component: CURRICULUM_SETUP_COMPONENT },
-    });
+    const pendingIds = new Set(pendingMessagesRef.current.map((message) => message.id));
+    pendingMessagesRef.current = [];
 
     setMessages((prev) => {
-      const withoutPlaceholders = prev.filter(
-        (message) =>
-          !(
-            message.type === 'component' &&
-            message.metadata?.component === CURRICULUM_SETUP_COMPONENT &&
-            message.metadata?.placeholder
-          ),
-      );
-
-      const nextMessages = [...withoutPlaceholders, setupMessage].sort(
-        (a, b) => a.timestamp - b.timestamp,
-      );
-      messagesRef.current = nextMessages;
-      return nextMessages;
+      const filtered = prev.filter((message) => !pendingIds.has(message.id));
+      messagesRef.current = filtered;
+      return filtered;
     });
-  }, []);
+  }, [setMessages]);
+
+  const persistPendingMessages = useCallback(async () => {
+    if (pendingMessagesRef.current.length === 0) {
+      return;
+    }
+
+    const tempMessages = pendingMessagesRef.current;
+    pendingMessagesRef.current = [];
+    const idsToReplace = new Set(tempMessages.map((message) => message.id));
+    const persisted: ChatMessage[] = [];
+
+    for (const message of tempMessages) {
+      const saved = await saveChatMessage({
+        type: message.type,
+        content: message.content,
+        metadata: message.metadata,
+        sender: message.sender,
+      });
+      persisted.push(saved);
+    }
+
+    setMessages((prev) => {
+      const retained = prev.filter((message) => !idsToReplace.has(message.id));
+      const next = [...retained, ...persisted].sort((a, b) => a.timestamp - b.timestamp);
+      messagesRef.current = next;
+      return next;
+    });
+  }, [setMessages]);
+
+  const removeMessageById = useCallback(
+    (id: string) => {
+      setMessages((prev) => {
+        const next = prev.filter((message) => message.id !== id);
+        messagesRef.current = next;
+        return next;
+      });
+      pendingMessagesRef.current = pendingMessagesRef.current.filter((message) => message.id !== id);
+    },
+    [setMessages],
+  );
+
+  const updateMessage = useCallback(
+    (id: string, updates: Partial<ChatMessage>) => {
+      setMessages((prev) => {
+        const next = prev.map((message) =>
+          message.id === id
+            ? {
+                ...message,
+                ...updates,
+                metadata: updates.metadata
+                  ? { ...message.metadata, ...updates.metadata }
+                  : message.metadata,
+              }
+            : message,
+        );
+        messagesRef.current = next;
+        return next;
+      });
+    },
+    [setMessages],
+  );
 
   // Load existing data from IndexedDB
   const loadExistingData = useCallback(async () => {
@@ -130,48 +188,69 @@ export function useCurriculumChat(): UseCurriculumChatResult {
 
       if (savedCurriculum) {
         setCurriculum(savedCurriculum);
-        const savedNextSubject = savedCurriculum.assessment?.nextSubject ?? null;
-        setNextSubject(savedNextSubject);
-        nextSubjectRef.current = savedNextSubject;
+        const savedNextSubjectSlug = savedCurriculum.assessment?.nextSubject ?? null;
+        const savedNextSubject =
+          savedNextSubjectSlug
+            ? savedCurriculum.subjects.find((subject) => subject.slug === savedNextSubjectSlug) ??
+              savedCurriculum.subjects.find((subject) => subject.name === savedNextSubjectSlug)
+            : null;
+        setNextSubject(savedNextSubject ?? null);
+        nextSubjectRef.current = savedNextSubject ?? null;
       }
 
       const normalized = chatHistory
         .map((message) => ({ ...message, sender: message.sender ?? 'ai' }))
-        .filter((message) => !(message.type === 'status' && !message.metadata));
+        .filter((message) => message.type !== 'component' && message.type !== 'status');
 
-      const hasSetupMessage = normalized.some(
-        (message) =>
-          message.type === 'component' &&
-          message.metadata?.component === CURRICULUM_SETUP_COMPONENT,
-      );
-
-      const historyWithSetup = hasSetupMessage
-        ? normalized
-        : [...normalized, createSetupPlaceholderMessage()];
-
-      const sortedHistory = historyWithSetup.sort((a, b) => a.timestamp - b.timestamp);
+      const sortedHistory = normalized.sort((a, b) => a.timestamp - b.timestamp);
       messagesRef.current = sortedHistory;
       setMessages(sortedHistory);
-
-      if (!hasSetupMessage && normalized.length > 0) {
-        await ensureSetupMessage();
-      }
     } catch (err) {
       console.error('❌ Failed to load data from IndexedDB:', err);
     }
-  }, [ensureSetupMessage]);
+  }, []);
 
   // Add message helper
   const addMessage = useCallback(
-    async (message: Omit<ChatMessage, 'id' | 'timestamp'> & { sender?: 'ai' | 'user' }) => {
-      const savedMessage = await saveChatMessage({
-        ...message,
+    async (
+      message: Omit<ChatMessage, 'id' | 'timestamp'> & { sender?: 'ai' | 'user' },
+      options: { persist?: boolean } = {},
+    ) => {
+      const { persist = true } = options;
+
+      if (persist) {
+        const savedMessage = await saveChatMessage({
+          ...message,
+          sender: message.sender ?? 'ai',
+        });
+        setMessages((prev) => {
+          const next = [...prev, savedMessage].sort((a, b) => a.timestamp - b.timestamp);
+          messagesRef.current = next;
+          return next;
+        });
+        return savedMessage;
+      }
+
+      const tempMessage: ChatMessage = {
+        id: `temp-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        type: message.type,
+        content: message.content,
+        metadata: message.metadata,
         sender: message.sender ?? 'ai',
+        timestamp: Date.now(),
+      };
+
+      pendingMessagesRef.current = [...pendingMessagesRef.current, tempMessage];
+      setMessages((prev) => {
+        const next = [...prev.filter((existing) => existing.id !== tempMessage.id), tempMessage].sort(
+          (a, b) => a.timestamp - b.timestamp,
+        );
+        messagesRef.current = next;
+        return next;
       });
-      setMessages((prev) => [...prev, savedMessage].sort((a, b) => a.timestamp - b.timestamp));
-      return savedMessage;
+      return tempMessage;
     },
-    [],
+    [setMessages],
   );
 
   // Generate curriculum
@@ -181,24 +260,58 @@ export function useCurriculumChat(): UseCurriculumChatResult {
       setError(null);
       setNextSubject(null);
       nextSubjectRef.current = null;
+      clearPendingMessages();
+
+      let generationFailed = false;
 
       try {
-        // Add welcome message
-        await addMessage({
-          type: 'system',
-          content: t
-            ? t('chat.welcomeMessage', { country: request.country, language: request.language })
-            : `👋 Welcome! Let me create your personalized learning plan for ${request.country} in ${request.language}...`,
-          sender: 'ai',
+
+        const preferredSubjects = (request.subjects ?? [])
+          .map((subject) => subject.trim())
+          .filter((subject) => subject.length > 0);
+
+        const { subjects: initialSubjects } = normalizeSubjectList(preferredSubjects);
+        const subjectMap = new Map<string, CurriculumSubject>();
+        const topics: Record<string, string[]> = {};
+
+        for (const subject of initialSubjects) {
+          subjectMap.set(subject.slug, subject);
+        }
+
+        if (initialSubjects.length > 0) {
+          const firstSubject = initialSubjects[0];
+          nextSubjectRef.current = firstSubject;
+          setNextSubject(firstSubject);
+        }
+
+        setCurriculum({
+          id: 'current',
+          country: request.country,
+          language: request.language,
+          gradeLevel: (request as any).gradeLevel || 'middle school learners',
+          subjects: initialSubjects,
+          topics: {},
+          activeSession: undefined,
+          assessment: {
+            nextSubject: initialSubjects[0]?.slug ?? null,
+          },
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
         });
 
-        await ensureSetupMessage();
+        const findSubjectByName = (name: string) => {
+          for (const subject of subjectMap.values()) {
+            if (subject.name === name) {
+              return subject;
+            }
+          }
+          return null;
+        };
 
         const stream = streamCurriculum(request);
-        const subjects: string[] = [];
-        const topics: Record<string, string[]> = {};
         for await (const chunk of stream) {
           if (chunk.error) {
+            generationFailed = true;
             setError(chunk.error);
             await addMessage({
               type: 'error',
@@ -206,16 +319,51 @@ export function useCurriculumChat(): UseCurriculumChatResult {
                 ? t('chat.errorMessage', { error: chunk.error })
                 : `❌ Error: ${chunk.error}`,
               sender: 'ai',
-            });
+            }, { persist: false });
             break;
           }
 
-          // Handle new subjects
-          if (chunk.subjects && chunk.subjects.length > 0) {
-            const newSubjects = chunk.subjects.filter((s) => !subjects.includes(s));
+          let subjectsChanged = false;
+          let topicsChanged = false;
 
-            for (const subject of newSubjects) {
-              subjects.push(subject);
+          if (Array.isArray(chunk.subjects) && chunk.subjects.length > 0) {
+            for (const entry of chunk.subjects as Array<CurriculumSubject | string>) {
+              if (typeof entry === 'string') {
+                const name = entry.trim();
+                if (!name) {
+                  continue;
+                }
+                if (findSubjectByName(name)) {
+                  continue;
+                }
+                const slug = createSlug(name, new Set(subjectMap.keys()));
+                if (subjectMap.has(slug)) {
+                  continue;
+                }
+                const subject: CurriculumSubject = { name, slug };
+                subjectMap.set(subject.slug, subject);
+                subjectsChanged = true;
+                if (!nextSubjectRef.current) {
+                  nextSubjectRef.current = subject;
+                  setNextSubject(subject);
+                }
+                continue;
+              }
+
+              const name = entry.name.trim();
+              const slug = entry.slug.trim();
+              const existing = subjectMap.get(slug);
+              if (existing) {
+                if (existing.name !== name) {
+                  existing.name = name;
+                  subjectsChanged = true;
+                }
+                continue;
+              }
+
+              const subject: CurriculumSubject = { name, slug };
+              subjectMap.set(slug, subject);
+              subjectsChanged = true;
 
               if (!nextSubjectRef.current) {
                 nextSubjectRef.current = subject;
@@ -224,50 +372,150 @@ export function useCurriculumChat(): UseCurriculumChatResult {
             }
           }
 
-          // Handle topics
           if (chunk.topics && Object.keys(chunk.topics).length > 0) {
-            for (const [subject, subjectTopics] of Object.entries(chunk.topics)) {
-              if (subjectTopics.length > 0) {
-                topics[subject] = subjectTopics;
+            for (const [key, subjectTopics] of Object.entries(chunk.topics)) {
+              if (!Array.isArray(subjectTopics) || subjectTopics.length === 0) {
+                continue;
               }
+              const subject =
+                subjectMap.get(key) ??
+                findSubjectByName(key);
+              const targetKey = subject ? subject.slug : key;
+              topics[targetKey] = [...subjectTopics];
+              topicsChanged = true;
             }
           }
 
-          // Update curriculum in state (real-time)
-          setCurriculum((prev) => ({
-            id: 'current',
-            country: request.country,
-            language: request.language,
-            gradeLevel: (request as any).gradeLevel || prev?.gradeLevel || 'middle',
-            subjects: [...subjects],
-            topics: { ...topics },
-            activeSession: prev?.activeSession,
-            assessment: {
-              nextSubject: nextSubjectRef.current,
-            },
-            createdAt: prev?.createdAt || Date.now(),
-            updatedAt: Date.now(),
-          }));
+          if (subjectsChanged || topicsChanged) {
+            const orderedSubjects = Array.from(subjectMap.values());
+            setCurriculum((prev) => ({
+              id: 'current',
+              country: request.country,
+              language: request.language,
+              gradeLevel: (request as any).gradeLevel || prev?.gradeLevel || 'middle school learners',
+              subjects: orderedSubjects,
+              topics: { ...topics },
+              activeSession: prev?.activeSession,
+              assessment: {
+                nextSubject: nextSubjectRef.current?.slug ?? null,
+              },
+              createdAt: prev?.createdAt || Date.now(),
+              updatedAt: Date.now(),
+            }));
+          }
         }
 
-        // Save final curriculum to IndexedDB
-        if (subjects.length > 0) {
-          console.log('💾 Saving curriculum to IndexedDB:', { subjects, topics });
-          await saveCurriculum({
-            country: request.country,
-            language: request.language,
-            gradeLevel: (request as any).gradeLevel || 'middle',
-            subjects,
-            topics,
-            assessment: {
-              nextSubject: nextSubjectRef.current,
-            },
-          });
-          console.log('✅ Curriculum saved successfully');
+        const orderedSubjects = Array.from(subjectMap.values());
 
-          // Success state reflected in curriculum setup card; no additional chat message needed
+        // Save final curriculum to IndexedDB and prime first lesson content
+        if (!generationFailed && orderedSubjects.length > 0) {
+          const primeSubject = nextSubjectRef.current ?? orderedSubjects[0];
+          const subjectTopics = primeSubject ? topics[primeSubject.slug] ?? [] : [];
+          const contextRelated = subjectTopics.slice(1, 4);
+          if (primeSubject) {
+            setLearningContext({
+              subject: primeSubject,
+              topic: subjectTopics[0] ?? null,
+              relatedTopics: contextRelated,
+            });
+          } else {
+            setLearningContext({ subject: null, topic: null, relatedTopics: [] });
+          }
+
+          let sessionWithPhase: LearningSession | null = null;
+
+          if (primeSubject && subjectTopics.length > 0) {
+            setIsPrimingLesson(true);
+            try {
+              const lessonResponse = await generateLessonSession({
+                country: request.country,
+                language: request.language,
+                gradeLevel: (request as any).gradeLevel || curriculum?.gradeLevel || 'middle school learners',
+                subject: primeSubject.name,
+                topic: subjectTopics[0],
+                topicIndex: 0,
+                totalTopics: subjectTopics.length,
+              });
+
+              sessionWithPhase = {
+                ...lessonResponse.session,
+                phase: 'explanation',
+                metadata: {
+                  ...lessonResponse.session.metadata,
+                  country: request.country,
+                  language: request.language,
+                  gradeLevel: (request as any).gradeLevel || curriculum?.gradeLevel || 'middle school learners',
+                  generator: lessonResponse.session.metadata?.generator ?? 'strands_lesson_v1',
+                },
+              };
+
+              setCachedLesson(primeSubject.slug, 0, {
+                subjectSlug: primeSubject.slug,
+                subjectName: primeSubject.name,
+                topic: subjectTopics[0],
+                topicIndex: 0,
+                lesson: lessonResponse.lesson,
+                session: lessonResponse.session,
+                savedAt: Date.now(),
+              }, primeSubject.name);
+
+              const statuses = loadTopicProgress(primeSubject.slug, subjectTopics.length, primeSubject.name);
+              statuses[0] = 'generated';
+              saveTopicProgress(primeSubject.slug, statuses, primeSubject.name);
+            } catch (primeError) {
+              generationFailed = true;
+              const errorMsg = primeError instanceof Error ? primeError.message : 'Lesson priming failed';
+              setError(errorMsg);
+              await addMessage({
+                type: 'error',
+                content: t
+                  ? t('chat.errorMessage', { error: errorMsg })
+                  : `❌ Error: ${errorMsg}`,
+                sender: 'ai',
+              }, { persist: false });
+            } finally {
+              setIsPrimingLesson(false);
+            }
+          }
+
+          if (!generationFailed) {
+            const createdAt = curriculum?.createdAt ?? Date.now();
+            const updatedCurriculum: CurriculumData = {
+              id: 'current',
+              country: request.country,
+              language: request.language,
+              gradeLevel: (request as any).gradeLevel || curriculum?.gradeLevel || 'middle school learners',
+              subjects: orderedSubjects,
+              topics: { ...topics },
+              activeSession: sessionWithPhase ?? undefined,
+              assessment: {
+                nextSubject: nextSubjectRef.current?.slug ?? null,
+              },
+              createdAt,
+              updatedAt: Date.now(),
+            };
+
+            setCurriculum(updatedCurriculum);
+
+            await persistPendingMessages();
+            console.log('💾 Saving curriculum to IndexedDB:', {
+              subjects: updatedCurriculum.subjects,
+              topics: updatedCurriculum.topics,
+            });
+            await saveCurriculum({
+              country: updatedCurriculum.country,
+              language: updatedCurriculum.language,
+              gradeLevel: updatedCurriculum.gradeLevel,
+              subjects: updatedCurriculum.subjects,
+              topics: updatedCurriculum.topics,
+              activeSession: updatedCurriculum.activeSession,
+              assessment: updatedCurriculum.assessment,
+            });
+            console.log('✅ Curriculum saved successfully');
+          }
         }
       } catch (err) {
+        generationFailed = true;
         const errorMsg = err instanceof Error ? err.message : 'Unknown error';
         setError(errorMsg);
         await addMessage({
@@ -276,63 +524,196 @@ export function useCurriculumChat(): UseCurriculumChatResult {
             ? t('chat.errorMessage', { error: errorMsg })
             : `❌ Error: ${errorMsg}`,
           sender: 'ai',
-        });
+        }, { persist: false });
       } finally {
         setIsGenerating(false);
       }
     },
-    [addMessage, ensureSetupMessage],
+    [addMessage, clearPendingMessages, persistPendingMessages, curriculum, setLearningContext],
   );
 
   const sendUserMessage = useCallback(
-    async (content: string) => {
+    async (content: string, t?: (key: string, params?: any) => string) => {
       const trimmed = content.trim();
       if (!trimmed) {
         return;
       }
 
+      let userMessage: ChatMessage | null = null;
+
       try {
-        await addMessage({
+        userMessage = await addMessage({
           type: 'user',
           content: trimmed,
           sender: 'user',
         });
       } catch (err) {
         console.error('❌ Failed to persist user message:', err);
+        return;
+      }
+
+      const subjectsList = curriculum?.subjects ?? [];
+      const assessmentSubject = curriculum?.assessment?.nextSubject
+        ? subjectsList.find((subject) => subject.slug === curriculum.assessment?.nextSubject) ?? null
+        : null;
+      const activeSubject = curriculum?.activeSession?.subject
+        ? subjectsList.find((subject) => subject.name === curriculum.activeSession?.subject) ?? null
+        : null;
+
+      const fallbackSubject =
+        nextSubjectRef.current ??
+        learningContext.subject ??
+        activeSubject ??
+        assessmentSubject ??
+        subjectsList[0] ??
+        null;
+
+      const currentSubject = learningContext.subject ?? fallbackSubject;
+      const subjectTopics = currentSubject ? curriculum?.topics?.[currentSubject.slug] ?? [] : [];
+      const activeSession = curriculum?.activeSession;
+
+      let currentTopic = learningContext.topic ?? null;
+
+      if (!currentTopic) {
+        if (activeSession?.subject === currentSubject?.name && activeSession?.topic) {
+          currentTopic = activeSession.topic;
+        } else if (subjectTopics.length > 0) {
+          currentTopic = subjectTopics[0];
+        }
+      }
+
+      const relatedTopics =
+        learningContext.subject?.slug === currentSubject?.slug && learningContext.relatedTopics.length > 0
+          ? learningContext.relatedTopics
+          : subjectTopics.filter((topic) => topic !== currentTopic).slice(0, 3);
+
+      const history: TutorChatHistoryEntry[] = messagesRef.current
+        .filter((message) => message.id !== userMessage?.id)
+        .filter((message) => message.type !== 'component' && message.type !== 'status')
+        .filter((message) => message.sender === 'user' || message.sender === 'ai')
+        .slice(-8)
+        .map((message) => ({
+          role: message.sender === 'user' ? 'user' : 'assistant',
+          content: message.content,
+        }));
+
+      const thinkingMessage = await addMessage(
+        {
+          type: 'status',
+          content: t?.('chat.tutorThinking') ?? 'Thinking through your question...',
+          sender: 'ai',
+        },
+        { persist: false },
+      );
+
+      try {
+        const response = await askTutor({
+          message: trimmed,
+          subject: currentSubject?.name ?? t?.('chat.fallbackSubject') ?? 'General Studies',
+          topic: currentTopic,
+          relatedTopics,
+          language: curriculum?.language || 'English',
+          country: curriculum?.country,
+          gradeLevel: curriculum?.gradeLevel || undefined,
+          history,
+        });
+
+        if (thinkingMessage) {
+          removeMessageById(thinkingMessage.id);
+        }
+
+        const metadata = {
+          subject: currentSubject?.name ?? undefined,
+          topic: currentTopic ?? undefined,
+          relatedTopics,
+          followUps: response.followUps,
+          navigationTip: response.navigationTip,
+        };
+
+        const streamingMessage = await addMessage(
+          {
+            type: 'system',
+            content: '',
+            sender: 'ai',
+            metadata,
+          },
+          { persist: false },
+        );
+
+        if (streamingMessage) {
+          const chunkSize = Math.max(4, Math.round(response.answer.length / 120));
+          const chunks: string[] = [];
+          for (let index = 0; index < response.answer.length; index += chunkSize) {
+            chunks.push(response.answer.slice(index, index + chunkSize));
+          }
+
+          let buffer = '';
+          for (const chunk of chunks) {
+            buffer += chunk;
+            updateMessage(streamingMessage.id, { content: buffer, metadata });
+            // Throttle updates so the UI appears to stream the response
+            await new Promise((resolve) => setTimeout(resolve, 18));
+          }
+
+          const savedMessage = await saveChatMessage({
+            type: 'system',
+            content: response.answer,
+            sender: 'ai',
+            metadata,
+          });
+
+          setMessages((prev) => {
+            const remaining = prev.filter((message) => message.id !== streamingMessage.id);
+            const next = [...remaining, savedMessage].sort((a, b) => a.timestamp - b.timestamp);
+            messagesRef.current = next;
+            return next;
+          });
+          pendingMessagesRef.current = pendingMessagesRef.current.filter(
+            (message) => message.id !== streamingMessage.id,
+          );
+        }
+      } catch (err) {
+        if (thinkingMessage) {
+          removeMessageById(thinkingMessage.id);
+        }
+        console.error('❌ Tutor response failed:', err);
+        await addMessage({
+          type: 'error',
+          content: `❌ ${t?.('chat.tutorError') ?? "I'm having trouble responding right now. Please try again in a moment."}`,
+          sender: 'ai',
+        });
       }
     },
-    [addMessage],
+    [addMessage, curriculum, learningContext, removeMessageById, updateMessage],
   );
 
   const startLesson = useCallback(
-    async (subject: string, t?: (key: string, params?: any) => string) => {
+    async (subject: CurriculumSubject, t?: (key: string, params?: any) => string) => {
       if (!curriculum || curriculum.subjects.length === 0) {
         return;
       }
 
-      const topicsForSubject = curriculum.topics?.[subject] ?? [];
+      const topicsForSubject = curriculum.topics?.[subject.slug] ?? [];
       if (topicsForSubject.length === 0) {
         await addMessage({
           type: 'status',
-          content: `Topics for ${subject} are still loading. Try again soon!`,
+          content: `Topics for ${subject.name} are still loading. Try again soon!`,
           sender: 'ai',
         });
         return;
       }
 
-      await ensureSetupMessage();
-
       await addMessage({
         type: 'status',
         content: t
-          ? t('chat.startingLesson', { subject })
-          : `▶️ Creating a personalized path for ${subject}...`,
+          ? t('chat.startingLesson', { subject: subject.name })
+          : `▶️ Creating a personalized path for ${subject.name}...`,
         sender: 'ai',
       });
 
       await new Promise((resolve) => setTimeout(resolve, 1200));
 
-      const firstTopic = topicsForSubject[0] ?? subject;
+      const firstTopic = topicsForSubject[0] ?? subject.name;
       const topicIndex = Math.max(0, topicsForSubject.indexOf(firstTopic));
       const totalTopics = Math.max(topicsForSubject.length, 1);
 
@@ -343,11 +724,17 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         country: curriculum.country,
         language: curriculum.language,
         gradeLevel: curriculum.gradeLevel,
-        subject,
+        subject: subject.name,
         topic: firstTopic,
         topicIndex,
         totalTopics,
       };
+
+      setLearningContext({
+        subject,
+        topic: firstTopic,
+        relatedTopics: topicsForSubject.filter((topic) => topic !== firstTopic).slice(0, 3),
+      });
 
       try {
         const { session } = await generateLessonSession(lessonRequest);
@@ -412,7 +799,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         });
       }
     },
-    [addMessage, curriculum, ensureSetupMessage],
+    [addMessage, curriculum, setLearningContext],
   );
 
   const continueSession = useCallback(async () => {
@@ -476,35 +863,37 @@ export function useCurriculumChat(): UseCurriculumChatResult {
   const regenerate = useCallback(
     async (request: CurriculumRequest, t?: (key: string, params?: any) => string) => {
       // Clear UI immediately
+      clearPendingMessages();
+      const { subjects: preferredSubjects } = normalizeSubjectList(
+        (request.subjects ?? []).map((subject) => subject.trim()).filter(Boolean),
+      );
       setCurriculum({
         id: 'current',
-        country: '',
-        language: '',
-        gradeLevel: '',
-        subjects: [],
+        country: request.country || '',
+        language: request.language || '',
+        gradeLevel: (request as any).gradeLevel || '',
+        subjects: preferredSubjects,
         topics: {},
         activeSession: undefined,
         assessment: {
-          nextSubject: null,
+          nextSubject: preferredSubjects[0]?.slug ?? null,
         },
         createdAt: Date.now(),
         updatedAt: Date.now(),
       });
-      const placeholder = createSetupPlaceholderMessage();
-      messagesRef.current = [placeholder];
-      setMessages([placeholder]);
-      setNextSubject(null);
-      nextSubjectRef.current = null;
+      messagesRef.current = [];
+      setMessages([]);
+      const initialSubject = preferredSubjects[0] ?? null;
+      setNextSubject(initialSubject);
+      nextSubjectRef.current = initialSubject;
+      setLearningContext({
+        subject: initialSubject,
+        topic: null,
+        relatedTopics: [],
+      });
 
       // Clear chat history in IndexedDB
       await clearChatHistory();
-
-      // Add regeneration message
-      await addMessage({
-        type: 'system',
-        content: t ? t('chat.regeneratingMessage') : '♻️ Regenerating your curriculum...',
-        sender: 'ai',
-      });
 
       // Generate new curriculum (will clear DB after success)
       await generate(request, t);
@@ -514,13 +903,14 @@ export function useCurriculumChat(): UseCurriculumChatResult {
         await deleteCurriculum();
       }
     },
-    [generate, addMessage, error]
+    [generate, clearPendingMessages, error, setLearningContext]
   );
 
   return {
     messages,
     curriculum,
     isGenerating,
+     isPrimingLesson,
     error,
     generate,
     regenerate,
@@ -531,5 +921,7 @@ export function useCurriculumChat(): UseCurriculumChatResult {
     continueSession,
     submitSessionAnswer,
     finishSession,
+    learningContext,
+    setLearningContext,
   };
 }

@@ -20,13 +20,19 @@ export default function SubjectTopicsPage() {
   const params = useParams<SubjectParams>();
   const searchParams = useSearchParams();
 
-  const subjectSlug = params?.subject ?? '';
-  const subjectName = useMemo(() => decodeURIComponent(subjectSlug), [subjectSlug]);
+  const subjectSlugParam = params?.subject ?? '';
+
+  const [subjectKey, subjectName] = useMemo(() => {
+    const decoded = decodeURIComponent(subjectSlugParam);
+    return [decoded, decoded];
+  }, [subjectSlugParam]);
 
   const queryCountry = searchParams?.get('country') ?? '';
   const queryLanguage = searchParams?.get('language') ?? '';
   const queryGrade = searchParams?.get('grade') ?? '';
 
+  const [resolvedSubjectKey, setResolvedSubjectKey] = useState(subjectKey);
+  const [resolvedSubjectName, setResolvedSubjectName] = useState(subjectName);
   const [topics, setTopics] = useState<string[]>([]);
   const [statuses, setStatuses] = useState<TopicStatus[]>([]);
   const [isLoadingTopics, setIsLoadingTopics] = useState(true);
@@ -47,12 +53,17 @@ export default function SubjectTopicsPage() {
           return;
         }
 
-        const subjectTopics = curriculum?.topics?.[subjectName] ?? [];
+        const subject = curriculum?.subjects?.find((item) => item.slug === subjectKey || item.name === subjectName) ?? null;
+        const effectiveSlug = subject?.slug ?? subjectKey;
+        const effectiveName = subject?.name ?? subjectName;
+        const subjectTopics = curriculum?.topics?.[effectiveSlug] ?? curriculum?.topics?.[effectiveName] ?? [];
         setTopics(subjectTopics);
+        setResolvedSubjectKey(effectiveSlug);
+        setResolvedSubjectName(effectiveName);
 
-        const initialStatuses = loadTopicProgress(subjectName, subjectTopics.length || 5);
+        const initialStatuses = loadTopicProgress(effectiveSlug, subjectTopics.length || 5, effectiveName);
         setStatuses(initialStatuses);
-        saveTopicProgress(subjectName, initialStatuses);
+        saveTopicProgress(effectiveSlug, initialStatuses, effectiveName);
 
         setCountry(queryCountry || curriculum?.country || '');
         setLanguage(queryLanguage || curriculum?.language || '');
@@ -73,7 +84,7 @@ export default function SubjectTopicsPage() {
     return () => {
       isMounted = false;
     };
-  }, [subjectName, queryCountry, queryLanguage, queryGrade]);
+  }, [subjectKey, subjectName, queryCountry, queryLanguage, queryGrade]);
 
   useEffect(() => {
     setLoadingTopicIndex(null);
@@ -112,7 +123,8 @@ export default function SubjectTopicsPage() {
       const params = new URLSearchParams({
         country,
         language,
-        subject: subjectName,
+        subject: resolvedSubjectKey,
+        subjectName: resolvedSubjectName,
         topic: topicName,
         index: String(index),
         totalTopics: String(topics.length || 5),
@@ -144,7 +156,7 @@ export default function SubjectTopicsPage() {
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700"
+          className="inline-flex items-center gap-2 text-sm font-medium text-sky-600 hover:text-sky-700"
         >
           ← Back
         </button>
@@ -153,7 +165,7 @@ export default function SubjectTopicsPage() {
           <p className="text-sm text-gray-500">Curriculum subject</p>
           <h1 className="text-3xl font-semibold text-gray-900 flex items-center gap-3">
             <span>📚</span>
-            <span>{subjectName}</span>
+            <span>{resolvedSubjectName}</span>
           </h1>
           <p className="text-gray-600">Choose a topic to start your lesson</p>
         </header>
@@ -172,7 +184,7 @@ export default function SubjectTopicsPage() {
 
             {topics.map((topic, index) => (
               <TopicCard
-                key={`${subjectName}-topic-${index}`}
+                key={`${resolvedSubjectKey}-topic-${index}`}
                 index={index}
                 title={topic}
                 status={statuses[index] ?? (index === 0 ? 'unlocked' : 'locked')}

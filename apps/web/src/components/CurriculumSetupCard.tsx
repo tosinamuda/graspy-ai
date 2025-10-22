@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { useI18n } from '@/lib/i18n-context';
-import { type CurriculumData } from '@/lib/curriculum-db';
+import { type CurriculumData, type CurriculumSubject } from '@/lib/curriculum-db';
 
 type SetupState = 'complete' | 'active' | 'pending';
 
@@ -17,20 +17,20 @@ interface SetupStep {
 interface CurriculumSetupCardProps {
   curriculum: CurriculumData | null;
   isGenerating: boolean;
-  nextSubject: string | null;
+  nextSubject: CurriculumSubject | null;
   className?: string;
 }
 
 const STATE_STYLES: Record<SetupState, { indicator: string; title: string; chip?: string }> = {
   complete: {
-    indicator: 'bg-teal-600 text-white border-teal-600',
+    indicator: 'bg-sky-600 text-white border-sky-600',
     title: 'text-gray-900',
-    chip: 'bg-teal-100 text-teal-700',
+    chip: 'bg-sky-100 text-sky-700',
   },
   active: {
-    indicator: 'border-2 border-teal-600 text-teal-700',
-    title: 'text-teal-700',
-    chip: 'bg-teal-600 text-white',
+    indicator: 'border-2 border-sky-600 text-sky-700',
+    title: 'text-sky-700',
+    chip: 'bg-sky-600 text-white',
   },
   pending: {
     indicator: 'border border-gray-300 text-gray-400',
@@ -51,7 +51,7 @@ export default function CurriculumSetupCard({
     () =>
       (curriculum?.subjects ?? []).map((subject) => ({
         subject,
-        topics: curriculum?.topics?.[subject] ?? [],
+        topics: curriculum?.topics?.[subject.slug] ?? [],
       })),
     [curriculum],
   );
@@ -155,7 +155,7 @@ export default function CurriculumSetupCard({
                 </div>
                 <p className="text-xs text-gray-600 mt-1 leading-snug">{step.description}</p>
                 {step.hint && (
-                  <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-teal-50 px-2.5 py-1 text-[11px] text-teal-700">
+                  <div className="mt-2 inline-flex items-center gap-2 rounded-md bg-sky-50 px-2.5 py-1 text-[11px] text-sky-700">
                     <span>✨</span>
                     <span>{step.hint}</span>
                   </div>
@@ -165,22 +165,22 @@ export default function CurriculumSetupCard({
                   <div className="mt-3 space-y-2">
                     {subjectEntries.map((entry) => (
                       <details
-                        key={entry.subject}
-                        className="group rounded-lg border border-teal-100 bg-teal-50/70 px-3 py-2"
+                        key={entry.subject.slug}
+                        className="group rounded-lg border border-sky-100 bg-sky-50/70 px-3 py-2"
                       >
-                        <summary className="flex cursor-pointer items-center justify-between gap-2 text-sm font-medium text-teal-900 marker:content-none select-none">
-                          <span className="truncate">{entry.subject}</span>
-                          <span className="flex items-center gap-2 text-xs text-teal-700">
+                        <summary className="flex cursor-pointer items-center justify-between gap-2 text-sm font-medium text-sky-900 marker:content-none select-none">
+                          <span className="truncate">{entry.subject.name}</span>
+                          <span className="flex items-center gap-2 text-xs text-sky-700">
                             {t('dashboard.setup.topicsCount', { count: entry.topics.length })}
-                            <span className="text-teal-600 transition-transform duration-200 group-open:rotate-180">
+                            <span className="text-sky-600 transition-transform duration-200 group-open:rotate-180">
                               ▾
                             </span>
                           </span>
                         </summary>
                         {entry.topics.length > 0 && (
-                          <ul className="mt-2 space-y-1 border-l border-teal-200 pl-3 text-xs text-teal-900">
+                          <ul className="mt-2 space-y-1 border-l border-sky-200 pl-3 text-xs text-sky-900">
                             {entry.topics.map((topic, idx) => (
-                              <li key={`${entry.subject}-topic-${idx}`} className="leading-relaxed">
+                              <li key={`${entry.subject.slug}-topic-${idx}`} className="leading-relaxed">
                                 {topic}
                               </li>
                             ))}

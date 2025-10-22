@@ -29,6 +29,44 @@ turbo/
 # TypeScript
 *.tsbuildinfo
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist-info/
+.eggs/
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.pytest_cache/
+.hypothesis/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.ruff_cache/
+.pytype/
+.coverage
+.coverage.*
+htmlcov/
+*.cover
+*.mo
+*.pot
+.tox/
+.nox/
+venv/
+ENV/
+env/
+.venv
+.python-version
+pyrightconfig.json
+.pdm.toml
+uv.lock
+
 # Logs and runtime
 *.log
 *.pid
@@ -68,14 +106,17 @@ apps/web/.next/
 apps/web/out/
 apps/web/.vercel/
 
-# Express + TypeScript (apps/server)
+# Python FastAPI backend (apps/server)
 apps/server/dist/
 apps/server/build/
 apps/server/.env.local
+apps/server/__pycache__/
+apps/server/**/__pycache__/
+apps/server/.pytest_cache/
+apps/server/app/data/
+apps/server/*.pyc
 
 # Tests
-coverage/
-__pycache__/
 __tests__/temp/
 jest-cache/
 

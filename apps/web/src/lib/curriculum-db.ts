@@ -1,3 +1,6 @@
+import type { LessonSlide } from '@/lib/lesson-types';
+import { normalizeSubjectList } from '@/lib/slug';
+
 /**
  * IndexedDB utilities for curriculum and chat storage
  */
@@ -12,7 +15,7 @@ export interface CurriculumData {
   country: string;
   language: string;
   gradeLevel: string;
-  subjects: string[];
+  subjects: CurriculumSubject[];
   topics?: Record<string, string[]>;
   activeSession?: LearningSession;
   assessment?: {
@@ -38,6 +41,7 @@ export interface LearningSession {
     correctFeedback: string;
     incorrectFeedback: string;
   };
+  slides?: LessonSlide[];
   phase: 'explanation' | 'practice' | 'feedback' | 'complete';
   answerIndex?: number;
   isCorrect?: boolean;
@@ -58,6 +62,61 @@ export interface ChatMessage {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   metadata?: any;
   sender: 'ai' | 'user';
+}
+
+export interface CurriculumSubject {
+  name: string;
+  slug: string;
+}
+
+type LegacyCurriculumSubject = string | CurriculumSubject;
+
+interface LegacyCurriculumData extends Omit<CurriculumData, 'subjects' | 'topics' | 'assessment'> {
+  subjects: LegacyCurriculumSubject[];
+  topics?: Record<string, string[]>;
+  assessment?: {
+    nextSubject: string | null;
+  };
+}
+
+function normalizeCurriculumData(
+  input: (CurriculumData | LegacyCurriculumData | null),
+): CurriculumData | null {
+  if (!input) {
+    return null;
+  }
+
+  const { subjects: rawSubjects, topics: rawTopics, assessment, ...rest } = input as LegacyCurriculumData;
+  const { subjects, nameToSlug } = normalizeSubjectList(rawSubjects ?? []);
+
+  const topicsBySlug: Record<string, string[]> = {};
+  const sourceTopics = rawTopics ?? {};
+
+  for (const subject of subjects) {
+    const fromSlug = sourceTopics[subject.slug];
+    const fromName = sourceTopics[subject.name];
+    const entries = Array.isArray(fromSlug) ? fromSlug : Array.isArray(fromName) ? fromName : [];
+    topicsBySlug[subject.slug] = [...entries];
+  }
+
+  const nextSubjectRaw = assessment?.nextSubject ?? null;
+  const normalizedNextSubject =
+    nextSubjectRaw && subjects.length > 0
+      ? subjects.find((subject) => subject.slug === nextSubjectRaw)?.slug ??
+        (nextSubjectRaw ? nameToSlug.get(nextSubjectRaw) ?? null : null)
+      : null;
+
+  return {
+    ...rest,
+    subjects,
+    topics: topicsBySlug,
+    assessment: assessment
+      ? {
+          ...assessment,
+          nextSubject: normalizedNextSubject,
+        }
+      : undefined,
+  };
 }
 
 // Initialize IndexedDB
@@ -92,12 +151,17 @@ export async function saveCurriculum(data: Omit<CurriculumData, 'id' | 'createdA
   const tx = db.transaction(CURRICULUM_STORE, 'readwrite');
   const store = tx.objectStore(CURRICULUM_STORE);
 
-  const curriculum: CurriculumData = {
+  const curriculum = normalizeCurriculumData({
     id: 'current', // Single curriculum per user
     ...data,
     createdAt: Date.now(),
     updatedAt: Date.now(),
-  };
+  });
+
+  if (!curriculum) {
+    db.close();
+    throw new Error('Failed to normalize curriculum data before saving');
+  }
 
   await new Promise<void>((resolve, reject) => {
     const request = store.put(curriculum);
@@ -113,14 +177,14 @@ export async function getCurriculum(): Promise<CurriculumData | null> {
   const tx = db.transaction(CURRICULUM_STORE, 'readonly');
   const store = tx.objectStore(CURRICULUM_STORE);
 
-  const curriculum = await new Promise<CurriculumData | undefined>((resolve, reject) => {
+  const curriculum = await new Promise<LegacyCurriculumData | undefined>((resolve, reject) => {
     const request = store.get('current');
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 
   db.close();
-  return curriculum || null;
+  return normalizeCurriculumData(curriculum ?? null);
 }
 
 export async function updateCurriculum(updates: Partial<CurriculumData>): Promise<void> {
@@ -128,21 +192,27 @@ export async function updateCurriculum(updates: Partial<CurriculumData>): Promis
   const tx = db.transaction(CURRICULUM_STORE, 'readwrite');
   const store = tx.objectStore(CURRICULUM_STORE);
 
-  const existing = await new Promise<CurriculumData | undefined>((resolve, reject) => {
+  const existing = await new Promise<LegacyCurriculumData | undefined>((resolve, reject) => {
     const request = store.get('current');
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
 
   if (existing) {
-    const updated: CurriculumData = {
-      ...existing,
+    const normalizedExisting = normalizeCurriculumData(existing);
+    const merged = normalizeCurriculumData({
+      ...(normalizedExisting ?? existing),
       ...updates,
       updatedAt: Date.now(),
-    };
+    });
+
+    if (!merged) {
+      db.close();
+      throw new Error('Failed to normalize curriculum data during update');
+    }
 
     await new Promise<void>((resolve, reject) => {
-      const request = store.put(updated);
+      const request = store.put(merged);
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
     });

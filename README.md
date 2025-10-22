@@ -4,7 +4,7 @@
 
 **Providing personalized, culturally-aware education to 244 million out-of-school children in crisis zones, IDP camps, and underserved communities worldwide.**
 
-[![FutureStack GenAI Hackathon 2025](https://img.shields.io/badge/Hackathon-FutureStack%20GenAI%202025-blue)](https://www.wemakedevs.org/hackathons/futurestack25) [![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org) [![npm workspace](https://img.shields.io/badge/npm-workspace-red)](https://docs.npmjs.com/cli/v7/using-npm/workspaces)
+[![Node.js](https://img.shields.io/badge/node-%3E%3D16.0.0-brightgreen)](https://nodejs.org) [![npm workspace](https://img.shields.io/badge/npm-workspace-red)](https://docs.npmjs.com/cli/v7/using-npm/workspaces)
 
 </div>
 
@@ -17,10 +17,9 @@ graspy is an AI-powered educational platform designed to deliver quality educati
 **Key Features:**
 
 - 🌍 **Multi-language Support**: Native language learning (Arabic, Hausa, Yoruba, Pashto, etc.)
-- 🎯 **Adaptive Curriculum**: AI-generated personalized learning paths using LangGraph
+- 🎯 **Adaptive Curriculum**: AI-generated personalized learning paths using Agentic AI through AWS Strands
 - 📚 **Culturally Relevant**: Context-aware examples (local currency, food, scenarios)
 - 💬 **AI Tutor Chat**: Real-time Q&A with Socratic teaching methods
-- 📊 **Progress Tracking**: Mastery-based learning with detailed analytics
 - 🔌 **Offline-First**: Local storage for continued learning without internet
 - ♿ **Accessible**: Mobile-first design with RTL language support
 
@@ -46,6 +45,8 @@ graspy is an AI-powered educational platform designed to deliver quality educati
 
 ---
 
+---
+
 ## 📦 Project Structure
 
 Graspy is built as an **npm workspace** monorepo, containing two main applications:
@@ -54,7 +55,26 @@ Graspy is built as an **npm workspace** monorepo, containing two main applicatio
 graspy/
 ├── apps/
 │   ├── web/                    # Next.js frontend application
-│   └── server/                 # Express.js backend API
+│   │   ├── src/                # Source code
+│   │   │   ├── app/            # Next.js App Router pages
+│   │   │   ├── components/     # React components
+│   │   │   ├── lib/            # Utility functions & API clients
+│   │   │   └── locales/        # i18n translation files (en, ar, yo)
+│   │   ├── .env.example        # Environment variables template
+│   │   └── package.json        # Frontend dependencies
+│   │
+│   └── server/                 # Python FastAPI backend
+│       ├── app/                # Application code
+│       │   ├── api/            # API routes
+│       │   ├── services/       # Business logic & AI agents
+│       │   ├── schemas.py      # Pydantic models
+│       │   ├── settings.py     # Configuration management
+│       │   └── main.py         # FastAPI app entry point
+│       ├── .env.example        # Environment variables template
+│       ├── main.py             # Server entry point
+│       ├── pyproject.toml      # Python dependencies
+│       └── package.json        # npm scripts wrapper
+│
 ├── node_modules/               # Shared dependencies
 ├── package.json               # Workspace root configuration
 ├── turbo.json                 # Turborepo build configuration
@@ -73,19 +93,19 @@ graph LR
     end
 
     subgraph "API Layer"
-        B[Node.js Express Backend<br/>Port: 8081]
+        B[Python Fast API Backend<br/>Port: 8081]
     end
 
     subgraph "AI Orchestration"
-        C[LangGraph<br/>Agentic AI Orchestrator<br/>Multi-Agent Workflows]
+        C[LAWS Strand<br/>Agentic AI Orchestrator<br/>Multi-Agent Workflows]
     end
 
     subgraph "LLM Gateway"
-        D[OpenRouter]
+        D[AWS Bedrock]
     end
 
-    subgraph "Inference Engine"
-        E[Cerebras Inference<br/>Meta Llama 3.1 Model<br/>Multi-lingual Capabilities]
+    subgraph "Model"
+        E[AWS Nova Lite]
     end
 
     Client <-->|SSE EventStream| B
@@ -121,9 +141,12 @@ graph LR
 
 | Technology     | Purpose                                      |
 | -------------- | -------------------------------------------- |
-| **Express.js** | Node.js web framework                        |
-| **TypeScript** | Type-safe backend                            |
-| **LangGraph**  | AI workflow graphs for curriculum generation |
+| **FastAPI** | Modern Python web framework with async support |
+| **Pydantic** | Data validation and settings management |
+| **Python 3.12+** | Programming language |
+| **uv** | Fast Python package manager |
+| **AWS Strands** | AI agent framework for curriculum generation |
+| **SSE (Server-Sent Events)** | Real-time streaming responses |
 
 **Location**: [`/apps/server/`](apps/server/)
 
@@ -131,9 +154,9 @@ graph LR
 
 | Service        | Purpose                                       |
 | -------------- | --------------------------------------------- |
-| **OpenRouter** | Unified LLM API gateway                       |
-| **Meta Llama** | Primary language model for content generation |
-| **Cerebras**   | High-performance AI inference engine          |
+| **AWS Bedrock** | LLM Inferencing                       |
+| **AWS Nova Lite** | Primary language model for content generation |
+| **AWS Strand**   | Agentic AI framework for orchestrating agents          |
 
 ### Development Tools
 
@@ -146,79 +169,167 @@ graph LR
 
 ### Prerequisites
 
+Before you begin, ensure you have the following installed:
+
+| Tool | Version | Installation |
+|------|---------|--------------|
+| **Node.js** | >= 18.0.0 | [Download](https://nodejs.org/) |
+| **npm** | >= 10.9.2 | Comes with Node.js |
+| **Python** | >= 3.12 | [Download](https://www.python.org/) |
+| **uv** | Latest | `pip install uv` or [Install Guide](https://docs.astral.sh/uv/getting-started/installation/) |
+
+**Quick Check:**
 ```bash
-Node.js >= 16.0.0
-npm >= 10.9.2
+node --version   # Should be >= 18.0.0
+npm --version    # Should be >= 10.9.2
+python --version # Should be >= 3.12
+uv --version     # Should show installed version
 ```
 
-### 1. Clone the Repository
+---
+
+### Step 1: Clone the Repository
 
 ```bash
 git clone https://github.com/tosinamuda/graspy.git
 cd graspy
 ```
 
-### 2. Install Dependencies
+---
 
-Since this is an **npm workspace**, install from the root:
+### Step 2: Install Dependencies
+
+Since this is an **npm workspace monorepo**, install from the root directory:
 
 ```bash
 npm install
 ```
 
-This will install dependencies for both `apps/web` and `apps/server`.
+This command will:
+- Install Node.js dependencies for the frontend (`apps/web`)
+- Install Python dependencies for the backend (`apps/server`) via uv
+- Set up the workspace structure
 
-### 3. Environment Configuration
+**Note:** The Python backend uses `uv` for dependency management, which is automatically called during `npm install` via the `preinstall` script in `apps/server/package.json`.
 
-#### Backend Environment Variables
-Copy sample enviornment variable from `.env.example` to `.env.development` in [`apps/server/config/`](apps/server/config/):
+---
+
+### Step 3: Configure Environment Variables
+
+Both the frontend and backend require environment variables to run properly.
+
+#### 🔧 Backend Configuration (`apps/server/`)
+
+1. **Copy the example environment file:**
 
 ```bash
-cd apps/server/config
-cp .env.example .env.development
+cd apps/server
+cp .env.example .env
 ```
 
-**How to get API Keys:**
+2. **Edit `.env` with your credentials:**
 
-1. **OpenRouter**: Sign up at [openrouter.ai](https://openrouter.ai) → Get API key
-2. Create a `.env.development` file in `apps/server/config/`
-3. Add your `OPENROUTER_API_KEY`
+```bash
+# Required for local development
+nano .env  # or use your preferred editor
+```
 
-
-#### Frontend Environment Variables
-
-Copy sample enviornment variable from `.env.example` to `.env` in [`apps/web/`](apps/web/):
-
-
-Adjust the environment variable as you see fit 
-**`.env.local`**:
+**Minimum Required Configuration:**
 
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:8081
+# ============================================================
+# Server Configuration
+# ============================================================
+HOST=0.0.0.0
+PORT=8081
+UVICORN_RELOAD=true
+
+# ============================================================
+# AWS Bedrock Configuration (REQUIRED)
+# ============================================================
+BEDROCK_AWS_REGION=us-east-1
+BEDROCK_AWS_ACCESS_KEY_ID=your_aws_access_key_here
+BEDROCK_AWS_SECRET_ACCESS_KEY=your_aws_secret_key_here
+
+# ============================================================
+# Strands AI Configuration
+# ============================================================
+STRANDS_MODEL_ID=amazon.nova-lite-v1:0
+STRANDS_TEMPERATURE=0
+STRANDS_STREAMING=true
+
+# ============================================================
+# Lesson Configuration
+# ============================================================
+LESSON_SLIDE_MAX_TOKENS=9000
+LESSON_PRACTICE_MAX_TOKENS=5000
 ```
 
-**`.env`** (for production):
+**📝 How to Get AWS Credentials:**
+
+1. **Sign up for AWS**: Go to [aws.amazon.com](https://aws.amazon.com) and create an account
+2. **Enable Amazon Bedrock**: Navigate to AWS Bedrock in your region
+3. **Request Model Access**: Request access to Amazon Nova Lite model
+4. **Create IAM User**: Create an IAM user with Bedrock permissions
+5. **Generate Access Keys**: Generate access key ID and secret access key
+6. **Add to .env**: Copy the credentials to your `.env` file
+
+**📚 For more details on all environment variables, see:**
+- [apps/server/ENVIRONMENT_VARIABLES.md](apps/server/ENVIRONMENT_VARIABLES.md)
+- [apps/server/.env.example](apps/server/.env.example)
+
+#### 🌐 Frontend Configuration (`apps/web/`)
+
+1. **Copy the example environment file:**
+
+```bash
+cd apps/web
+cp .env.example .env.local
+```
+
+2. **Edit `.env.local`:**
+
+```bash
+nano .env.local  # or use your preferred editor
+```
+
+**Configuration:**
 
 ```env
-NEXT_PUBLIC_API_URL=https://your-production-api.com
+# API endpoint for backend (development)
+NEXT_PUBLIC_API_URL=http://localhost:8081/api
 ```
 
-### 4. Run the Application
+**For production deployment:**
 
-#### Development Mode (Recommended)
+```env
+# Production API endpoint
+NEXT_PUBLIC_API_URL=https://your-production-api.com/api
+```
 
-From the **root directory**, run both apps concurrently:
+---
+
+### Step 4: Run the Application
+
+#### 🚀 Option 1: Run Everything Together (Recommended)
+
+From the **root directory**, start both frontend and backend:
 
 ```bash
 npm run dev
 ```
 
-This uses Turborepo to run:
+This uses **Turborepo** to run both applications concurrently:
 
-- **Frontend**: [http://localhost:3000](http://localhost:3000) (Next.js with Turbopack)
-- **Backend**: [http://localhost:8081](http://localhost:8081) (Express.js)
+- ✅ **Frontend**: [http://localhost:3000](http://localhost:3000) - Next.js with Turbopack
+- ✅ **Backend**: [http://localhost:8081](http://localhost:8081) - FastAPI with uvicorn
 
-#### Run Apps Individually
+**What's running:**
+- Frontend dev server with hot module replacement
+- Backend API with auto-reload on file changes
+- Both apps are connected and ready for development
+
+#### 🔨 Option 2: Run Apps Individually
 
 **Frontend only:**
 
@@ -227,14 +338,27 @@ cd apps/web
 npm run dev
 ```
 
-**Backend only (hot-reload):**
+Access at: [http://localhost:3000](http://localhost:3000)
+
+**Backend only:**
+
+```bash
+cd apps/server
+npm run dev
+```
+
+Access at: [http://localhost:8081](http://localhost:8081)
+
+Or with hot-reload:
 
 ```bash
 cd apps/server
 npm run dev:hot
 ```
 
-#### Production Build
+#### 📦 Production Build
+
+To build for production:
 
 ```bash
 # Build all apps
@@ -244,36 +368,227 @@ npm run build
 npm run start
 ```
 
+**Production Ports:**
+- Frontend: [http://localhost:3000](http://localhost:3000)
+- Backend: [http://localhost:8081](http://localhost:8081)
 
-## 🤖 Integration Details
+---
 
-### How Graspy Used Hackathon Partner Services
+### Step 5: Verify Installation
 
-#### 1. **Meta Llama Models** (via Langraph)
+Once everything is running, verify the setup:
 
-- **Purpose**: Multi-linguial Agentic curicullum generation
-- **Models Used**:
-  - `meta-llama/llama-4-scout` - Complex curriculum generation
+1. **Open your browser**: Go to [http://localhost:3000](http://localhost:3000)
+2. **You should see**: The Graspy homepage with language selection
+3. **Test the backend**: Go to [http://localhost:8081/docs](http://localhost:8081/docs) to see the FastAPI interactive docs
+4. **Create a curriculum**: Select a subject and try generating a curriculum to verify AI integration
 
-#### 2. **OpenRouter**
+---
 
-- **Purpose**: LLM gateway to Cerebas API to access meta-llama 4
+### 🔍 Troubleshooting
 
-#### 3. **Cerebras Inference**
+#### Backend Issues
 
-- **Purpose**: Ultra-fast inference for real-time chat
-- **Integration**: Via OpenRouter's cerebras integration
+**Problem: `ModuleNotFoundError: No module named 'sse_starlette'`**
 
-#### 4. **Docker**
+Solution:
+```bash
+cd apps/server
+uv sync  # Reinstall Python dependencies
+```
 
-- **Purpose**: To containerize the frontend and backend application
-  LangGraph orchestrates complex AI workflows:
+**Problem: AWS Bedrock authentication errors**
+
+Solution:
+- Verify your AWS credentials are correct in `.env`
+- Check that Bedrock is enabled in your AWS region
+- Ensure your IAM user has `bedrock:InvokeModel` permissions
+
+**Problem: Port 8081 is already in use**
+
+Solution:
+```bash
+# Change the port in apps/server/.env
+PORT=8082
+
+# Update frontend API URL in apps/web/.env.local
+NEXT_PUBLIC_API_URL=http://localhost:8082/api
+```
+
+#### Frontend Issues
+
+**Problem: Cannot connect to backend**
+
+Solution:
+- Verify backend is running: `curl http://localhost:8081/api/health`
+- Check `NEXT_PUBLIC_API_URL` in `apps/web/.env.local`
+- Clear Next.js cache: `rm -rf apps/web/.next`
+
+**Problem: Module not found errors**
+
+Solution:
+```bash
+# Reinstall dependencies
+rm -rf node_modules apps/web/node_modules
+npm install
+```
+
+#### General Issues
+
+**Problem: `uv` command not found**
+
+Solution:
+```bash
+# Install uv
+pip install uv
+
+# Or use the installer
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Problem: Permission denied errors**
+
+Solution:
+```bash
+# On macOS/Linux, you might need to fix permissions
+sudo chown -R $(whoami) ~/.npm
+sudo chown -R $(whoami) node_modules
+```
+
+---
+
+### 📋 Quick Start Checklist
+
+- [ ] Node.js >= 18.0.0 installed
+- [ ] Python >= 3.12 installed
+- [ ] uv package manager installed
+- [ ] Repository cloned
+- [ ] Dependencies installed with `npm install`
+- [ ] Backend `.env` file created with AWS credentials
+- [ ] Frontend `.env.local` file created
+- [ ] Both servers running with `npm run dev`
+- [ ] Frontend accessible at http://localhost:3000
+- [ ] Backend API docs accessible at http://localhost:8081/docs
+- [ ] Test curriculum generation working
+
+
+## 🤖 AI Integration & Architecture
+
+### How Graspy Generates Personalized Curricula
+
+Graspy uses **AWS Strands** (Agentic AI framework) with **Amazon Bedrock** to orchestrate multi-agent workflows for intelligent curriculum generation:
+
+#### 1. **AWS Bedrock** - LLM Inference Platform
+
+- **Purpose**: Serverless LLM inference with enterprise security
+- **Model**: Amazon Nova Lite (`amazon.nova-lite-v1:0`)
+- **Features**:
+  - Low latency inference
+  - Multi-language support
+  - Cost-effective for educational use
+  - Server-Sent Events (SSE) for streaming responses
+
+#### 2. **AWS Strands** - Agentic AI Framework
+
+- **Purpose**: Multi-agent workflow orchestration for curriculum generation
+- **Agents**:
+  - **Curriculum Designer Agent**: Creates personalized learning paths
+  - **Content Generator Agent**: Generates culturally-aware lesson content
+  - **Assessment Builder Agent**: Creates practice exercises and quizzes
+- **Features**:
+  - Async agent coordination
+  - Context-aware content generation
+  - Adaptive learning path optimization
+
+#### 3. **Real-time Streaming**
+
+- **Technology**: Server-Sent Events (SSE) via `sse-starlette`
+- **Purpose**: Stream curriculum generation in real-time to frontend
+- **User Experience**: Progressive rendering of lessons as they're generated
+
+### Data Flow
+
+```mermaid
+sequenceDiagram
+    participant U as User (Browser)
+    participant F as Next.js Frontend
+    participant B as FastAPI Backend
+    participant S as AWS Strands
+    participant BR as AWS Bedrock
+    participant M as Amazon Nova Lite
+
+    U->>F: Request curriculum (subject, grade, language)
+    F->>B: POST /api/curriculum/generate
+    B->>S: Initialize Strands agents
+    S->>BR: Invoke Bedrock with agent prompts
+    BR->>M: Forward to Amazon Nova Lite
+    M-->>BR: Generated content chunks
+    BR-->>S: Stream responses
+    S-->>B: Orchestrated curriculum
+    B-->>F: SSE Stream (lesson by lesson)
+    F-->>U: Progressive UI updates
+```
+
+### Why This Architecture?
+
+1. **Scalability**: Serverless Bedrock scales automatically
+2. **Cost-Effective**: Pay only for what you use
+3. **Low Latency**: Amazon Nova Lite is optimized for fast responses
+4. **Agentic Intelligence**: Strands orchestrates complex multi-step workflows
+5. **Streaming UX**: Users see content as it's generated, not after everything completes
+6. **Offline-First**: Frontend caches generated curricula locally
+
+---
+
+## 📚 API Documentation & Useful Links
+
+### Backend API Endpoints
+
+When your backend is running, you can access:
+
+- **Interactive API Docs**: [http://localhost:8081/docs](http://localhost:8081/docs) - Swagger UI
+- **Alternative Docs**: [http://localhost:8081/redoc](http://localhost:8081/redoc) - ReDoc UI
+- **OpenAPI Schema**: [http://localhost:8081/openapi.json](http://localhost:8081/openapi.json)
+
+### Key API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/api/curriculum/generate` | POST | Generate personalized curriculum (SSE stream) |
+| `/api/curriculum/chat` | POST | Chat with AI tutor about curriculum |
+| `/api/lesson/{topicIndex}` | GET | Get specific lesson content |
+
+### Frontend Routes
+
+| Route | Description |
+|-------|-------------|
+| `/` | Homepage with language selection |
+| `/topics/[subject]` | Subject curriculum overview |
+| `/lesson` | Individual lesson page with chat |
+| `/app/dashboard` | Student dashboard (future) |
+
+### Useful Documentation
+
+- **AWS Bedrock**: [docs.aws.amazon.com/bedrock](https://docs.aws.amazon.com/bedrock/)
+- **AWS Strands SDK**: [Strands Agents Documentation](https://github.com/awslabs/agents-for-amazon-bedrock)
+- **Next.js**: [nextjs.org/docs](https://nextjs.org/docs)
+- **FastAPI**: [fastapi.tiangolo.com](https://fastapi.tiangolo.com)
+- **Pydantic**: [docs.pydantic.dev](https://docs.pydantic.dev)
+- **Turborepo**: [turbo.build/repo/docs](https://turbo.build/repo/docs)
+
+### Environment Variables Reference
+
+For detailed information about all environment variables:
+
+- **Backend**: [apps/server/ENVIRONMENT_VARIABLES.md](apps/server/ENVIRONMENT_VARIABLES.md)
+- **Backend Settings**: [apps/server/SETTINGS_MIGRATION_SUMMARY.md](apps/server/SETTINGS_MIGRATION_SUMMARY.md)
 
 ---
 
 ## 🎓 Post-MVP Roadmap
 
-### Phase 1: Enhanced Features (Q4 2026)
+### Phase 1: Enhanced Features (Q4 2025)
 
 - [ ] User authentication
 - [ ] More curriculum support
@@ -305,3 +620,41 @@ npm run start
 - **Offline Mesh Networks**: Peer-to-peer content sharing via Bluetooth/WiFi Direct
 - **AI Voice Tutors**: Multi-lingual voice-based tutoring
 - **Credential Pathways**: Recognized certificates for students
+
+---
+
+## 📄 License
+
+This project is licensed under the ISC License.
+
+---
+
+## 🌟 Support the Project
+
+If you find Graspy helpful, please:
+
+- ⭐ Star the repository
+- 🐛 Report bugs and issues
+- 💡 Suggest new features
+- 📖 Improve documentation
+- 🌍 Spread the word about accessible education
+
+---
+
+## 📧 Contact & Community
+
+- **Repository**: [github.com/tosinamuda/graspy](https://github.com/tosinamuda/graspy)
+- **Issues**: [Report a bug or request a feature](https://github.com/tosinamuda/graspy/issues)
+
+---
+
+<div align="center">
+
+**Made with ❤️ for 244 million out-of-school children worldwide**
+
+*Education is a right, not a privilege.*
+
+---
+
+
+</div>

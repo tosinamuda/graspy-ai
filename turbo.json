@@ -20,6 +20,9 @@
         "dev": {
             "cache": false
         },
+        "dev:hot": {
+            "cache": false
+        },
         "lint": {
             "cache": false
         },

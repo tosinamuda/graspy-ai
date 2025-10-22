@@ -12,10 +12,10 @@ interface TopicCardProps {
 const STATUS_STYLES: Record<TopicStatus, string> = {
   'not-generated': 'border-gray-200 bg-gray-50 text-gray-400',
   'generating': 'border-yellow-300 bg-yellow-50 text-yellow-700',
-  'generated': 'border-teal-500 bg-white hover:shadow-md',
-  unlocked: 'border-teal-500 bg-white hover:shadow-md',
+  'generated': 'border-sky-500 bg-white hover:shadow-md',
+  unlocked: 'border-sky-500 bg-white hover:shadow-md',
   locked: 'border-gray-200 bg-gray-50 text-gray-400',
-  completed: 'border-teal-200 bg-teal-50 text-teal-800 hover:shadow-sm',
+  completed: 'border-sky-200 bg-sky-50 text-sky-800 hover:shadow-sm',
 };
 
 const STATUS_ICON: Record<TopicStatus, string> = {
@@ -59,7 +59,7 @@ export default function TopicCard({ index, title, status, onClick }: TopicCardPr
           </div>
         </div>
         {status !== 'locked' ? (
-          <span className="text-sm font-medium text-teal-600">
+          <span className="text-sm font-medium text-sky-600">
             {status === 'completed' ? 'Review' : 'Start'} →
           </span>
         ) : (

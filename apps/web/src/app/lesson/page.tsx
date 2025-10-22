@@ -17,12 +17,17 @@ export default function LessonPage() {
   const country = searchParams?.get('country') ?? '';
   const language = searchParams?.get('language') ?? '';
   const grade = searchParams?.get('grade') ?? '';
-  const subject = searchParams?.get('subject') ?? '';
+  const subjectSlug = searchParams?.get('subject') ?? '';
+  const subjectNameParam = searchParams?.get('subjectName') ?? '';
   const topic = searchParams?.get('topic') ?? '';
   const topicIndex = Number.parseInt(searchParams?.get('index') ?? '0', 10);
   const totalTopics = Number.parseInt(searchParams?.get('totalTopics') ?? '1', 10);
 
-  const sanitizedSubject = useMemo(() => decodeURIComponent(subject), [subject]);
+  const subjectKey = useMemo(() => decodeURIComponent(subjectSlug), [subjectSlug]);
+  const sanitizedSubject = useMemo(() => {
+    const source = subjectNameParam || subjectSlug;
+    return decodeURIComponent(source);
+  }, [subjectNameParam, subjectSlug]);
   const sanitizedTopic = useMemo(() => decodeURIComponent(topic), [topic]);
   const normalizedIndex = Number.isNaN(topicIndex) ? 0 : topicIndex;
   const normalizedTotal = Number.isNaN(totalTopics) ? 1 : Math.max(1, totalTopics);
@@ -81,8 +86,8 @@ export default function LessonPage() {
   };
 
   const handleComplete = () => {
-    completeTopic(sanitizedSubject, normalizedIndex, normalizedTotal);
-    router.push(`/dashboard/${encodeURIComponent(sanitizedSubject)}`);
+    completeTopic(subjectKey || sanitizedSubject, normalizedIndex, normalizedTotal, sanitizedSubject);
+    router.push(`/app/learn/${encodeURIComponent(subjectKey || sanitizedSubject)}`);
   };
 
   const renderLoading = () => (
@@ -99,7 +104,7 @@ export default function LessonPage() {
         <button
           type="button"
           onClick={handleBack}
-          className="inline-flex items-center gap-2 text-sm font-medium text-teal-600 hover:text-teal-700"
+          className="inline-flex items-center gap-2 text-sm font-medium text-sky-600 hover:text-sky-700"
         >
           ← Back to Topics
         </button>
@@ -112,8 +117,8 @@ export default function LessonPage() {
             <p className="text-sm mb-4">{error}</p>
             <button
               type="button"
-              onClick={() => router.push('/dashboard')}
-              className="rounded-lg bg-teal-600 px-4 py-2 text-sm font-semibold text-white hover:bg-teal-700"
+              onClick={() => router.push('/app/learn')}
+              className="rounded-lg bg-sky-600 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-700"
             >
               Return to dashboard
             </button>

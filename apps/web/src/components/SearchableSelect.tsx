@@ -112,7 +112,7 @@ export default function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <label htmlFor={id} className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor={id} className="mb-2 block text-sm font-semibold text-slate-700">
           {label}
         </label>
       )}
@@ -128,15 +128,18 @@ export default function SearchableSelect({
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
           disabled={disabled}
-          className={`w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-lg text-gray-900 placeholder:text-gray-500 ${disabled ? 'bg-gray-100 cursor-not-allowed text-gray-500 placeholder:text-gray-400' : 'bg-white'
-            } ${className}`}
+          className={`w-full px-4 py-3 border border-sky-100 rounded-2xl focus:border-sky-400 focus:ring-2 focus:ring-sky-300 focus:ring-offset-0 text-base text-slate-900 placeholder:text-slate-400 shadow-sm transition ${
+            disabled
+              ? 'bg-slate-100 cursor-not-allowed text-slate-500 placeholder:text-slate-400'
+              : 'bg-white'
+          } ${className}`}
           autoComplete="off"
         />
 
         {/* Dropdown arrow */}
         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
           <svg
-            className={`w-5 h-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+            className={`w-5 h-5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -148,14 +151,14 @@ export default function SearchableSelect({
 
       {/* Dropdown list */}
       {isOpen && !disabled && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-auto">
+        <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-2xl border border-sky-100 bg-white shadow-xl shadow-sky-100">
           {filteredOptions.length === 0 ? (
-            <div className="px-4 py-3 text-gray-500 text-sm">No results found</div>
+            <div className="px-4 py-3 text-sm text-slate-500">No results found</div>
           ) : (
             Object.entries(groupedOptions).map(([group, groupOptions]) => (
               <div key={group}>
                 {group !== 'default' && (
-                  <div className="px-4 py-2 text-xs font-semibold text-gray-500 bg-gray-50 sticky top-0">
+                  <div className="sticky top-0 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {group}
                   </div>
                 )}
@@ -166,8 +169,13 @@ export default function SearchableSelect({
                       key={option.value}
                       type="button"
                       onClick={() => handleSelect(option.value)}
-                      className={`w-full text-left px-4 py-2 hover:bg-indigo-50 transition-colors ${globalIndex === highlightedIndex ? 'bg-indigo-100' : ''
-                        } ${value === option.value ? 'bg-indigo-50 font-medium text-indigo-900' : 'text-gray-900'}`}
+                      className={`w-full px-4 py-2 text-left transition-colors ${
+                        globalIndex === highlightedIndex ? 'bg-sky-100' : ''
+                      } ${
+                        value === option.value
+                          ? 'bg-sky-50 font-medium text-sky-700'
+                          : 'text-slate-900 hover:bg-sky-50'
+                      }`}
                       onMouseEnter={() => setHighlightedIndex(globalIndex)}
                     >
                       {option.label}

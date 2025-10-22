@@ -58,10 +58,10 @@ export default function CurriculumGenerator({ country, language }: CurriculumGen
           <div className="grid gap-3">
             {data.subjects.map((subject, index) => (
               <div
-                key={index}
+                key={subject.slug || index}
                 className="p-4 bg-indigo-50 border border-indigo-200 rounded-lg"
               >
-                <p className="font-medium text-indigo-900">{subject}</p>
+                <p className="font-medium text-indigo-900">{subject.name}</p>
               </div>
             ))}
           </div>
