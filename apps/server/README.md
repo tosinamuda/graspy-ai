@@ -1,6 +1,6 @@
 # Graspy Python Backend
 
-FastAPI port of the original Express service that powers curriculum and lesson generation for Graspy. It keeps the exact REST surface (`/api/...`) while swapping the implementation to Python, `uv`, and the AWS Strands Agent SDK.
+A FastAPI agentic backend powered by AWS Strands Agent SDK.
 
 ## Features
 
@@ -11,18 +11,18 @@ FastAPI port of the original Express service that powers curriculum and lesson g
 
 ## Environment
 
-| Variable | Purpose |
-| --- | --- |
-| `PORT` | Port uvicorn listens on (default `8081`) |
-| `CORS_ORIGINS` | Comma separated list or JSON array of allowed origins |
-| `BEDROCK_AWS_REGION` | AWS region for Strands / Bedrock |
-| `BEDROCK_AWS_ACCESS_KEY_ID` | AWS access key |
-| `BEDROCK_AWS_SECRET_ACCESS_KEY` | AWS secret key |
-| `BEDROCK_AWS_SESSION_TOKEN` | Optional session token for temporary creds |
-| `STRANDS_MODEL_ID` | Bedrock model id (defaults to `amazon.nova-lite-v1:0`) |
-| `STRANDS_AGENT_ID` | Optional agent id if you orchestrate Bedrock Agents |
-| `STRANDS_AGENT_ALIAS_ID` | Optional agent alias id |
-| `STRANDS_FORCE_FALLBACK` | Set to `true` to disable Strands calls during local dev |
+| Variable                        | Purpose                                                 |
+| ------------------------------- | ------------------------------------------------------- |
+| `PORT`                          | Port uvicorn listens on (default `8081`)                |
+| `CORS_ORIGINS`                  | Comma separated list or JSON array of allowed origins   |
+| `BEDROCK_AWS_REGION`            | AWS region for Strands / Bedrock                        |
+| `BEDROCK_AWS_ACCESS_KEY_ID`     | AWS access key                                          |
+| `BEDROCK_AWS_SECRET_ACCESS_KEY` | AWS secret key                                          |
+| `BEDROCK_AWS_SESSION_TOKEN`     | Optional session token for temporary creds              |
+| `STRANDS_MODEL_ID`              | Bedrock model id (defaults to `amazon.nova-lite-v1:0`)  |
+| `STRANDS_AGENT_ID`              | Optional agent id if you orchestrate Bedrock Agents     |
+| `STRANDS_AGENT_ALIAS_ID`        | Optional agent alias id                                 |
+| `STRANDS_FORCE_FALLBACK`        | Set to `true` to disable Strands calls during local dev |
 
 User data is stored at `app/data/users.json` by default. Override with `PY_SERVER_USER_DB`.
 
