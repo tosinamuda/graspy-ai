@@ -56,7 +56,6 @@ Recent conversation:
 Current learner message:
 \"\"\"{payload.message}\"\"\"
 
-Respond with a JSON object that matches TutorAgentPayload.
 Guidelines:
 - Provide a clear, encouraging explanation or answer in {payload.language}.
 - Mention the current topic or subject when possible.

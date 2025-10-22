@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from typing import Any, Optional, Sequence, Type, TypeVar
+from typing import Any, AsyncIterator, Optional, Sequence, Type, TypeVar
 from pydantic import BaseModel, ValidationError
 
 from ..settings import Settings
@@ -18,14 +18,18 @@ class StrandsRuntime:
     """
     Thin helper around the Strands Agent SDK.
 
-    It creates Bedrock-backed agents on demand and exposes a single async
-    structured_output helper. There is intentionally no local fallback: if the
-    SDK or credentials are misconfigured we surface the error to the caller so
-    it can be handled upstream.
+    This runtime follows Strands Agents SDK best practices:
+    - Use structured_output() for typed responses WITHOUT tools
+    - Use invoke() for orchestrators WITH tools
+    - Use stream() for real-time streaming with tools
+
+    There is intentionally no local fallback: if the SDK or credentials are
+    misconfigured we surface the error to the caller so it can be handled upstream.
     """
 
     def __init__(self, settings: Settings) -> None:
         self._settings = settings
+
     @property
     def settings(self) -> Settings:
         return self._settings
@@ -36,13 +40,33 @@ class StrandsRuntime:
         prompt: str,
         *,
         system_prompt: str,
-        tools: Optional[Sequence[Any]] = None,
         temperature: Optional[float] = None,
         max_tokens: Optional[int] = None,
     ) -> TModel:
         """
-        Invoke an agent with the provided system prompt and return a typed
-        response using Strands' structured_output API.
+        Invoke an agent and return a typed response using structured_output.
+
+        IMPORTANT: Do NOT use this with tools. Tools are incompatible with
+        structured_output. The Pydantic model becomes the only available tool,
+        and any other tools you provide will be ignored.
+
+        Use invoke() instead if you need to coordinate multiple tools.
+
+        Args:
+            model: Pydantic model defining the output structure
+            prompt: User prompt describing what to generate
+            system_prompt: System instructions (do NOT mention "JSON" or "schema")
+            temperature: Model temperature override
+            max_tokens: Max tokens override
+
+        Returns:
+            Validated Pydantic model instance
+
+        Best Practices:
+            - System prompt should focus on WHAT to generate, not format
+            - Never mention "JSON", "schema", or "structure" in prompts
+            - Let Pydantic field descriptions guide the model
+            - Use Field() with descriptions for clarity
         """
         logger.debug(
             "Invoking Strands structured_output",
@@ -53,7 +77,7 @@ class StrandsRuntime:
         )
         agent = self.make_agent(
             system_prompt=system_prompt,
-            tools=tools,
+            tools=[],  # Always empty for structured_output
             temperature=temperature,
             max_tokens=max_tokens,
         )
@@ -63,6 +87,104 @@ class StrandsRuntime:
             msg = f"Strands structured output failed validation for model '{model.__name__}'"
             logger.exception(msg)
             raise ValueError(msg) from exc
+
+    async def invoke(
+        self,
+        prompt: str,
+        *,
+        system_prompt: str,
+        tools: Sequence[Any],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> str:
+        """
+        Invoke an orchestrator agent with tools.
+
+        Use this when the agent needs to coordinate multiple specialized agents
+        or tools. The agent will decide which tools to call and when.
+
+        Args:
+            prompt: User prompt describing the task
+            system_prompt: System instructions explaining available tools and workflow
+            tools: List of @tool decorated functions or agent tools
+            temperature: Model temperature override
+            max_tokens: Max tokens override
+
+        Returns:
+            String response from the agent (parse as needed)
+
+        Best Practices:
+            - System prompt should list all available tools with descriptions
+            - Explain the workflow/order of tool calls
+            - Tool docstrings are critical - the model reads them to decide when to call
+            - Use temperature=0.0 for deterministic orchestration
+        """
+        logger.debug(
+            "Invoking Strands orchestrator",
+            extra={
+                "num_tools": len(tools),
+                "system_prompt_preview": system_prompt[:60],
+            },
+        )
+        agent = self.make_agent(
+            system_prompt=system_prompt,
+            tools=tools,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        result = await agent.invoke_async(prompt)  # type: ignore[attr-defined]
+        return str(result)
+
+    async def stream(
+        self,
+        prompt: str,
+        *,
+        system_prompt: str,
+        tools: Sequence[Any],
+        temperature: Optional[float] = None,
+        max_tokens: Optional[int] = None,
+    ) -> AsyncIterator[dict[str, Any]]:
+        """
+        Stream events from an agent with tools.
+
+        NOTE: Streaming is disabled with structured_output. Only use this
+        with invoke-style agents that have tools.
+
+        Args:
+            prompt: User prompt describing the task
+            system_prompt: System instructions
+            tools: List of @tool decorated functions
+            temperature: Model temperature override
+            max_tokens: Max tokens override
+
+        Yields:
+            Event dictionaries containing:
+            - "data": Text chunks from the model
+            - "current_tool_use": Tool being called
+            - "tool_result": Result from tool execution
+            - "result": Final complete response
+            - "error": Error information if failure
+
+        Best Practices:
+            - Set callback_handler=None when creating sub-agents
+            - Process events in real-time for lower latency UX
+            - Handle all event types (data, current_tool_use, tool_result, result, error)
+        """
+        logger.debug(
+            "Streaming Strands agent",
+            extra={
+                "num_tools": len(tools),
+                "system_prompt_preview": system_prompt[:60],
+            },
+        )
+        agent = self.make_agent(
+            system_prompt=system_prompt,
+            tools=tools,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        async for event in agent.stream_async(prompt):  # type: ignore[attr-defined]
+            yield event
 
     def make_agent(
         self,

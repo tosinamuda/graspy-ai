@@ -58,18 +58,11 @@ Context:
 - Ability profile: {qualifier_text}
 - Prior learner interests: {", ".join(payload.interests or []) or "unknown"}
 
-Return between 6 and 15 subjects as JSON with this structure:
-{{
-  "subjects": [
-    {{"name": "subject title", "recommended": true}},
-    ...
-  ]
-}}
-
 Guidelines:
-- Make names short (max 4 words) and concrete.
-- Mark exactly 2-3 subjects as recommended=true.
-- In most school, mathematics is compulsory so it should be recommended
+- Generate between 6 and 15 subjects
+- Make names short (max 4 words) and concrete
+- Mark exactly 2-3 subjects as recommended
+- In most schools, mathematics is compulsory so it should be recommended
 """
 
         response = await self._runtime.structured_output(

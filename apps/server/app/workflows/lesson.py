@@ -4,10 +4,9 @@ import json
 import logging
 from typing import Dict, List, Optional
 
-from strands import Agent, tool  # type: ignore[import-not-found]
+from strands import tool  # type: ignore[import-not-found]
 
 from ..schemas import (
-    LessonAgentResponse,
     LessonPracticePayload,
     LessonRequest,
     LessonSlide,
@@ -130,28 +129,44 @@ def _sanitize_practice_payload(practice: LessonPracticePayload) -> LessonPractic
 
 LESSON_SYSTEM_PROMPT = (
     "You are a supportive instructional designer crafting culturally-aware slide lessons "
-    "for learners. Always respond in the learner's language, deliver rich yet concise instruction, "
-    "ensure every checkpoint connects directly to slide content, and output valid JSON only."
+    "for learners. Always respond in the learner's language and deliver rich yet concise instruction. "
+    "Ensure every checkpoint connects directly to slide content."
 )
 
 PRACTICE_SYSTEM_PROMPT = (
     "You create a single multiple-choice practice question with detailed feedback "
-    "based strictly on the provided lesson explanation and objectives. Output well-formed JSON only."
+    "based strictly on the provided lesson explanation and objectives."
 )
 
 ORCHESTRATOR_SYSTEM_PROMPT = """
-You are the Lesson Director orchestrator. Coordinate specialised tool agents to build a lesson.
+You are the Lesson Director orchestrator. Coordinate specialized tool agents to build a lesson.
 
 Available tools:
-- slide_designer(request_json: str) → JSON string describing the lesson slides.
-- practice_builder(payload_json: str) → JSON string describing the practice question.
 
-Tool usage rules:
-- Tool arguments must be valid JSON strings. Do not add commentary, Markdown, or extra quotations.
-- Always call slide_designer first with the original request JSON.
-- Then call practice_builder with a JSON object of the form {"request": <LessonRequest JSON>, "slides": <slides JSON>}.
-- After both tools succeed, reply ONCE with a JSON object containing exactly two keys: "slides" and "practice". The values must be the tool outputs verbatim.
-- If a tool call fails, report the error in your final JSON under an "error" key instead.
+1. **slide_designer** - Generates complete lesson slides with learning objectives and assessments
+   - Input: JSON string matching LessonRequest schema (topic, subject, language, country, grade)
+   - Output: JSON string with lesson overview, learning objectives, and five slides
+   - Use when: You need to create the initial lesson content
+
+2. **practice_builder** - Creates a formative assessment question based on lesson slides
+   - Input: JSON string with "request" (LessonRequest) and "slides" (LessonSlidesPayload)
+   - Output: JSON string with practice question, options, and feedback
+   - Use when: Lesson slides are ready and you need a practice question
+
+CRITICAL WORKFLOW:
+1. ALWAYS call slide_designer FIRST with the original lesson request JSON
+2. THEN call practice_builder SECOND with both the request and slides from slide_designer
+3. After both tools succeed, respond with a JSON object containing exactly two keys:
+   - "slides": the output from slide_designer (verbatim)
+   - "practice": the output from practice_builder (verbatim)
+4. If a tool fails, report the error under an "error" key
+
+Tool argument rules:
+- Tool arguments must be valid JSON strings
+- Do not add commentary, Markdown formatting, or extra quotations
+- Pass tool outputs verbatim to subsequent tools
+
+Focus on delegating to the right tools at the right time. Be concise in your coordination.
 """.strip()
 
 
@@ -187,7 +202,7 @@ def _build_slide_prompt(request: LessonRequest, grade: str, *, compact: bool = F
         '- Mention the "tutor" or "chat" to encourage the learner to share their response.\n'
         f"Each slide body should contain approximately {body_range} words using paragraphs and, when helpful, bullet or numbered lists. "
         "The overview must contain 3-4 sentences, and learning objectives should be three concise, action-oriented statements. "
-        "Respond concisely so the tool output fits within the schema. "
+        "Keep responses focused and concise. "
         f"{compact_guidance}"
     )
 
@@ -353,13 +368,42 @@ def _build_slide_tool(runtime: StrandsRuntime, max_tokens_override: Optional[int
     @tool
     async def slide_designer(request_json: str) -> str:
         """
-        Generate lesson slides for the provided request.
+        Generate culturally-aware lesson slides with learning objectives and assessments.
+
+        This specialized agent creates comprehensive lesson content including an overview,
+        learning objectives, and five instructional slides. Each slide contains rich content
+        with worked examples, scaffolded problems, or synthesis activities, plus assessments.
+
+        Capabilities:
+        - Creates overview (3-4 sentences) summarizing the lesson
+        - Generates three action-oriented learning objectives
+        - Builds five slides with titles, bodies (160-210 words), and assessments
+        - Supports LaTeX math notation for STEM subjects
+        - Adapts content to learner's language, country, and grade level
+        - Includes choice-based checkpoints connected to slide content
 
         Args:
-            request_json: JSON string that matches the LessonRequest schema.
+            request_json: JSON string with fields:
+                - topic: Topic to teach (e.g., "photosynthesis", "fractions")
+                - subject: Subject area (e.g., "Biology", "Mathematics")
+                - language: Learner's language (e.g., "English", "Spanish")
+                - country: Learner's country for cultural context
+                - gradeLevel: Grade level (e.g., "Grade 5", "middle school")
 
         Returns:
-            JSON string that matches LessonSlidesPayload with alias keys.
+            JSON string containing:
+                - overview: Lesson summary
+                - learningObjectives: Array of 3 objectives
+                - slides: Array of 5 slide objects with titles, bodies, and assessments
+
+        Example Input:
+            {
+                "topic": "Quadratic Equations",
+                "subject": "Mathematics",
+                "language": "English",
+                "country": "USA",
+                "gradeLevel": "Grade 9"
+            }
         """
         request_payload = LessonRequest.model_validate(json.loads(request_json))
         slides_payload = await _generate_slide_payload(
@@ -376,13 +420,38 @@ def _build_practice_tool(runtime: StrandsRuntime, max_tokens_override: Optional[
     @tool
     async def practice_builder(payload_json: str) -> str:
         """
-        Generate a practice question using slide content.
+        Create a formative assessment question based on completed lesson slides.
+
+        This specialized agent generates a multiple-choice practice question that tests
+        understanding of the lesson content. The question is based on the lesson overview,
+        learning objectives, and slide details to ensure alignment with what was taught.
+
+        Capabilities:
+        - Creates context-appropriate practice questions
+        - Generates three plausible answer options
+        - Identifies the correct answer
+        - Provides specific feedback for correct and incorrect responses
+        - Maintains cultural relevance to learner's country
+        - Uses learner's language for all content
 
         Args:
-            payload_json: JSON string with keys "request" (LessonRequest) and "slides" (LessonSlidesPayload).
+            payload_json: JSON string with two keys:
+                - request: LessonRequest object (topic, subject, language, country, gradeLevel)
+                - slides: LessonSlidesPayload object (overview, learningObjectives, slides array)
 
         Returns:
-            JSON string that matches LessonPracticePayload with alias keys.
+            JSON string containing:
+                - question: The practice question text
+                - options: Array of 3 answer choices
+                - correctOptionIndex: Index of the correct answer (0-2)
+                - correctFeedback: Feedback shown when answer is correct
+                - incorrectFeedback: Feedback shown when answer is incorrect
+
+        Example Input:
+            {
+                "request": {"topic": "Photosynthesis", "subject": "Biology", ...},
+                "slides": {"overview": "...", "learningObjectives": [...], "slides": [...]}
+            }
         """
         payload = json.loads(payload_json)
         request_payload = LessonRequest.model_validate(payload.get("request", {}))
@@ -398,49 +467,63 @@ def _build_practice_tool(runtime: StrandsRuntime, max_tokens_override: Optional[
     return practice_builder
 
 
-def _build_orchestrator(
-    runtime: StrandsRuntime,
-    *,
-    slide_max_tokens: Optional[int],
-    practice_max_tokens: Optional[int],
-) -> Agent:
-    slide_tool = _build_slide_tool(runtime, slide_max_tokens)
-    practice_tool = _build_practice_tool(runtime, practice_max_tokens)
-    return runtime.make_agent(
-        system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
-        tools=[slide_tool, practice_tool],
-        temperature=0.0,
-        max_tokens=1024,
-    )
-
-
 async def generate_lesson_assets(
     runtime: StrandsRuntime,
     request: LessonRequest,
     *,
     slide_max_tokens: Optional[int] = None,
     practice_max_tokens: Optional[int] = None,
-) -> Tuple[Dict[str, object], Dict[str, object]]:
+) -> tuple[Dict[str, object], Dict[str, object]]:
+    """
+    Generate lesson slides and practice question using orchestrator pattern.
+
+    This uses the agents-as-tools pattern where an orchestrator coordinates
+    two specialized agents: slide_designer and practice_builder.
+
+    Args:
+        runtime: StrandsRuntime instance
+        request: Lesson generation request
+        slide_max_tokens: Override for slide generation token limit
+        practice_max_tokens: Override for practice generation token limit
+
+    Returns:
+        Tuple of (slides_dict, practice_dict)
+    """
     slide_token_limit = slide_max_tokens if slide_max_tokens is not None else runtime.settings.lesson_slide_max_tokens
     practice_token_limit = practice_max_tokens if practice_max_tokens is not None else runtime.settings.lesson_practice_max_tokens
 
-    orchestrator = _build_orchestrator(
-        runtime,
-        slide_max_tokens=slide_token_limit,
-        practice_max_tokens=practice_token_limit,
-    )
+    # Build specialized agent tools
+    slide_tool = _build_slide_tool(runtime, slide_token_limit)
+    practice_tool = _build_practice_tool(runtime, practice_token_limit)
+
     request_json = json.dumps(request.model_dump(by_alias=True), ensure_ascii=False)
 
     try:
-        response = await orchestrator.structured_output_async(
-            LessonAgentResponse,
-            f"Lesson request JSON:\n{request_json}\nFollow the procedure above and return the final JSON.",
+        # Use invoke() for orchestrator with tools (NOT structured_output)
+        # The orchestrator will call the tools and return a JSON string
+        response_text = await runtime.invoke(
+            f"Lesson request JSON:\n{request_json}\n\nFollow the procedure above and return the final JSON.",
+            system_prompt=ORCHESTRATOR_SYSTEM_PROMPT,
+            tools=[slide_tool, practice_tool],
+            temperature=0.0,
+            max_tokens=1024,
         )
 
-        slides_payload = _sanitize_slide_payload(response.slides)
-        practice_payload = _sanitize_practice_payload(response.practice)
+        # Parse the orchestrator's JSON response
+        response_data = json.loads(response_text)
+
+        # Validate and sanitize the payloads
+        slides_payload = _sanitize_slide_payload(
+            LessonSlidesPayload.model_validate(response_data["slides"])
+        )
+        practice_payload = _sanitize_practice_payload(
+            LessonPracticePayload.model_validate(response_data["practice"])
+        )
+        logger.debug("Orchestrator agent completed successfully")
+
     except Exception as exc:  # noqa: BLE001
         logger.exception("Orchestrator agent failed; falling back to direct tool calls")
+        # Fallback: call tools directly without orchestration
         slides_payload = await _generate_slide_payload(
             runtime,
             request,
@@ -452,8 +535,6 @@ async def generate_lesson_assets(
             slides_payload,
             max_tokens=practice_token_limit,
         )
-    else:
-        logger.debug("Orchestrator agent completed successfully")
 
     slides_with_practice = attach_practice_to_slides(slides_payload, practice_payload)
 
