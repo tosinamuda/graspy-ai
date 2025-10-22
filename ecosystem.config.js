@@ -19,28 +19,6 @@ module.exports = {
             exec_mode: "fork",
             watch: false,
             max_memory_restart: "600M"
-        },
-        {
-            name: "graspy-server",              // Express reverse proxy + your APIs
-            cwd: "apps/server",
-            script: "./dist/index.js",
-            node_args: "-r ./config.js",
-            env: {
-                NODE_ENV: "production",
-                PORT: "8081",
-                NEXT_ORIGIN: "http://127.0.0.1:3001"
-            },
-            env_production: {
-                NODE_ENV: "production",
-                PORT: "8081",
-                NEXT_ORIGIN: "http://127.0.0.1:3001"
-            },
-            instances: 1,                        // run a single worker in PM2 like the manual command
-            exec_mode: "fork",
-            watch: false,
-            max_memory_restart: "400M",
-            listen_timeout: 10000,
-            kill_timeout: 5000
         }
     ],
 
