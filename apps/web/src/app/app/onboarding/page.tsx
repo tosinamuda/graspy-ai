@@ -616,6 +616,7 @@ export default function OnboardingPage() {
     };
 
     subjectStreamRef.current = eventSource;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [addAgentLog, ageRange, country, educationStatus, gradeLevel, language, schoolGrade]);
 
   useEffect(() => {

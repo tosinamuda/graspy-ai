@@ -126,7 +126,7 @@ export default function LearningSessionCard({
       {phase === 'complete' && (
         <div className="rounded-lg bg-sky-50 p-4 text-sm text-sky-900">
           <p className="font-medium">Lesson complete</p>
-          <p className="mt-2 text-sky-800">Nice work! We'll unlock the next topic soon.</p>
+          <p className="mt-2 text-sky-800">Nice work! We&apos;ll unlock the next topic soon.</p>
         </div>
       )}
     </div>
