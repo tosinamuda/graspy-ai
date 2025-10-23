@@ -155,7 +155,7 @@ export default function CommunityLandingPage() {
                 Education that reaches you, wherever you are
               </h1>
               <p className="text-lg text-slate-600 sm:text-xl">
-                Personal, playful lessons in the child's language. Built for communities of out-of-school learners.
+                Personal, playful lessons in the child&apos;s language. Built for communities of out-of-school learners.
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <Link

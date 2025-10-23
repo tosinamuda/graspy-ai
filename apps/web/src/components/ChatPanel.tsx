@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ComponentType, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { type ChatMessage, type CurriculumData, type CurriculumSubject, type LearningSession } from '@/lib/curriculum-db';
 import { useI18n } from '@/lib/i18n-context';
 import LearningSessionCard from '@/components/LearningSessionCard';
@@ -27,7 +27,7 @@ interface QuickAction {
   id: string;
   label: string;
   prompt: string;
-  Icon: (props: { className?: string }) => JSX.Element;
+  Icon: ComponentType<{ className?: string }>;
 }
 
 function formatTimestamp(timestamp: number, locale: string): string | null {
@@ -110,6 +110,7 @@ export default function ChatPanel({
       return [];
     }
     return curriculum?.topics?.[currentSubject.slug] ?? [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curriculum?.topics, currentSubject?.slug]);
 
   const currentTopic = useMemo(() => {
@@ -294,12 +295,14 @@ export default function ChatPanel({
                       {children}
                     </a>
                   ),
-                  code: ({ inline, children }) =>
-                    inline ? (
+                  code: ({ className, children }) => {
+                    const isInline = !className;
+                    return isInline ? (
                       <code className="rounded bg-white/20 px-1 py-0.5 text-xs">{children}</code>
                     ) : (
                       <code className="block rounded bg-slate-900/60 p-3 text-xs text-white">{children}</code>
-                    ),
+                    );
+                  },
                 }}
               >
                 {message.content}

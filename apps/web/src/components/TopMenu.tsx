@@ -1,8 +1,6 @@
 'use client';
 
 import { useI18n } from '@/lib/i18n-context';
-import LanguageSwitcher from './LanguageSwitcher';
-import Link from 'next/link';
 
 export default function TopMenu() {
   const { t } = useI18n();

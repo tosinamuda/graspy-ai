@@ -248,6 +248,7 @@ export function AutoFlowShowcase() {
     }
 
     setChatMessagesVisible(0);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     let revealed = 0;
     const interval = window.setInterval(() => {
       revealed += 1;

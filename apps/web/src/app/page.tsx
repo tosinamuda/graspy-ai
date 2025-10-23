@@ -4,17 +4,6 @@ import Link from 'next/link';
 
 import { AutoFlowShowcase } from '../components/AutoFlowShowcase';
 
-const WORKS_TODAY = [
-  'Generate curriculum and lesson plans',
-  'Take lessons in your chosen language',
-];
-
-const IN_DEVELOPMENT = [
-  'Voice prompts',
-  'Family check-ins',
-  'Mentor dashboards',
-  'Offline caching and background sync',
-];
 
 const LEARNING_CONTEXTS = [
   {

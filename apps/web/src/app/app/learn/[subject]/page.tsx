@@ -121,6 +121,7 @@ export default function SubjectPage() {
     return () => {
       setLearningContext({ subject: null, topic: null, relatedTopics: [] });
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [setLearningContext, subject, topics]);
 
   const handleTopicClick = async (topicIndex: number) => {

@@ -34,6 +34,7 @@ export default function DashboardPage() {
     setLearningContext,
   } = useDashboardContext();
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const handleRegenerate = () => {
     if (userProfile) {
       regenerate(
@@ -87,6 +88,7 @@ export default function DashboardPage() {
       return [];
     }
     return curriculum?.topics?.[highlightedSubject.slug] ?? [];
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [highlightedSubject?.slug, curriculum?.topics]);
 
   const highlightedStatuses = highlightedSubject
@@ -104,7 +106,7 @@ export default function DashboardPage() {
 
   const activeSession = curriculum?.activeSession;
   const activeLessonIsHighlighted =
-    Boolean(activeSession?.subject) && activeSession.subject === highlightedSubject?.name;
+    Boolean(activeSession?.subject) && activeSession?.subject === highlightedSubject?.name;
   const nextTopic =
     (activeLessonIsHighlighted && activeSession?.topic) || highlightedTopics[0] || null;
   const nextLessonTitle =

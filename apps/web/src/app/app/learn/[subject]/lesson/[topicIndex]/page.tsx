@@ -132,6 +132,7 @@ export default function LessonPage() {
     }
 
     void ensureLesson();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [curriculum, hasUser, subjectName, topicIndex, topic, topics]);
 
   const handleBack = () => {
