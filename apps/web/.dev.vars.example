@@ -1,0 +1,8 @@
+# Cloudflare Workers Development Environment Variables
+# Copy this file to .dev.vars for local development with wrangler
+
+# API endpoint for backend (development)
+NEXT_PUBLIC_API_URL=http://localhost:8081/api
+
+# For production deployment, set these variables in Cloudflare Pages dashboard
+# or use: wrangler pages secret put VARIABLE_NAME

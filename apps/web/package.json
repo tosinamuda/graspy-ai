@@ -8,7 +8,10 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "lint:fix": "eslint --fix"
+    "lint:fix": "eslint --fix",
+    "build:cloudflare": "next build && open-next build",
+    "preview:cloudflare": "wrangler pages dev .open-next/worker --compatibility-date=2025-12-11 --compatibility-flags=nodejs_compat",
+    "deploy:cloudflare": "wrangler pages deploy .open-next/worker"
   },
   "dependencies": {
     "katex": "^0.16.11",
@@ -30,7 +33,9 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
+    "open-next": "^3.1.3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.53.0"
   }
 }

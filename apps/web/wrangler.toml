@@ -1,0 +1,15 @@
+#:schema node_modules/wrangler/config-schema.json
+name = "graspy-web"
+compatibility_date = "2025-12-11"
+compatibility_flags = ["nodejs_compat"]
+
+pages_build_output_dir = ".open-next/worker"
+
+# Environment variables - use .dev.vars for local development
+# For production, set these in Cloudflare Pages dashboard or via wrangler secret
+[vars]
+# NEXT_PUBLIC_API_URL = "https://api.example.com/api"
+
+# Asset binding for static files
+[[assets]]
+binding = "ASSETS"

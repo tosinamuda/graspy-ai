@@ -9,11 +9,13 @@ const nunito = Nunito({
   variable: "--font-nunito",
   subsets: ["latin"],
   display: "swap",
+  fallback: ["system-ui", "arial"],
 });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+  fallback: ["monospace"],
 });
 
 export const metadata: Metadata = {
