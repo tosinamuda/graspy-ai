@@ -136,5 +136,4 @@ sqlite.db
 *.sqlite
 
 .claude
-
-docs
+internal-docs
