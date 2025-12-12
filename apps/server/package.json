@@ -4,7 +4,7 @@
   "description": "Graspy Agentic Backend powered by FastAPI and the AWS Strands Agent SDK.",
   "main": "index.js",
   "scripts": {
-    "preinstall": "pip install --user uv && uv venv && uv sync",
+    "preinstall": "uv sync",
     "start": "PORT=${PORT:-8081} uv run python main.py",
     "dev": "PORT=${PORT:-8081} UVICORN_RELOAD=true uv run python main.py",
     "dev:hot": "PORT=${PORT:-8081} UVICORN_RELOAD=true uv run python main.py"
